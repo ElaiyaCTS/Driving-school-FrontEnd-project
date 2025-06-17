@@ -1,0 +1,286 @@
+import { useState, useEffect } from "react";
+import axios from "axios";
+import { URL } from "../../App";
+import { useNavigate, useLocation } from "react-router-dom";
+import Pagination from "../../Components/Pagination";
+import { extractDriveFileId } from "../../Components/ImageProxyRouterFunction/funtion.js";
+
+const StaffTable = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [staff, setStaff] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [TotalPages, setTotalPages] = useState(1);
+  const [limit] = useState(10); // default limit
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedGender, setSelectedGender] = useState("");
+
+  const updateURLParams = ({ search, gender, page }) => {
+    const params = new URLSearchParams(location.search);
+
+    if (search !== undefined) {
+      search ? params.set("search", search) : params.delete("search");
+    }
+    if (gender !== undefined) {
+      gender ? params.set("gender", gender) : params.delete("gender");
+    }
+    if (page !== undefined) {
+      page && page > 1 ? params.set("page", page) : params.set("page", "1");
+    }
+    params.set("limit", limit); // Always show limit
+
+    navigate({ search: params.toString() }, { replace: true });
+  };
+
+  // Set state from URL params or default values
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const genderFromURL = params.get("gender") || "";
+    const searchFromURL = params.get("search") || "";
+    const pageFromURL = parseInt(params.get("page")) || 1;
+
+    const shouldUpdateURL =
+      !params.has("page") || !params.has("limit");
+
+    setSelectedGender(genderFromURL);
+    setSearchQuery(searchFromURL);
+    setCurrentPage(pageFromURL);
+
+    if (shouldUpdateURL) {
+      updateURLParams({
+        search: searchFromURL,
+        gender: genderFromURL,
+        page: pageFromURL,
+      });
+    }
+  }, [location.search]);
+
+  // Fetch data when filters change
+  useEffect(() => {
+    const controller = new AbortController();
+    let debounceTimer;
+
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const token = localStorage.getItem("token");
+
+        const params = {};
+        if (searchQuery.trim()) params.search = searchQuery;
+        if (selectedGender) params.gender = selectedGender;
+        if (currentPage) params.page = currentPage;
+        if (limit) params.limit = limit;
+
+        const response = await axios.get(`${URL}/api/staff`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          params,
+          signal: searchQuery.trim() ? controller.signal : undefined,
+        });
+
+        setStaff(response.data.staffList || []);
+        setCurrentPage(response.data.currentPage || 1);
+        setTotalPages(response.data.totalPages || 1);
+        
+      } catch (error) {
+        if (axios.isCancel(error) || error.name === "CanceledError") {
+          console.log("Search request was cancelled");
+        } else {
+          console.error("Error fetching data:", error);
+          setError(error.message);
+          if (
+            error.response &&
+            (error.response.status === 401 ||
+              error.response.data.message === "Invalid token")
+          ) {
+            setTimeout(() => {
+              localStorage.clear();
+              navigate("/");
+            }, 2000);
+          }
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (searchQuery.trim()) {
+      debounceTimer = setTimeout(fetchData, 2000);
+    } else {
+      fetchData();
+    }
+
+    return () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      if (searchQuery.trim()) controller.abort();
+    };
+  }, [searchQuery, selectedGender, currentPage]);
+
+  const handleSearchChange = (e) => {
+    const value = e.target.value;
+    setSearchQuery(value);
+    setCurrentPage(1);
+    updateURLParams({ search: value, gender: selectedGender, page: 1 });
+  };
+
+  const handleGenderChange = (e) => {
+    const value = e.target.value;
+    setSelectedGender(value);
+    setCurrentPage(1);
+    updateURLParams({ search: searchQuery, gender: value, page: 1 });
+  };
+
+  const handlePageChange = (page) => {
+    if (page >= 1 && page <= TotalPages) {
+      setCurrentPage(page);
+      updateURLParams({ search: searchQuery, gender: selectedGender, page });
+    }
+  };
+
+
+  return (
+    <div className="p-4">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+        <h3 className="text-xl font-bold text-center md:text-left">Staff Details</h3>
+        <button
+          onClick={() => navigate("/admin/staff/new")}
+          className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition w-full md:w-auto"
+        >
+          Register
+        </button>
+      </div>
+
+      <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-4">
+        <div className="relative w-full md:w-1/3">
+          <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+            <svg
+              className="w-4 h-4 text-gray-500 mr-2"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 20 20"
+            >
+              <path
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z"
+              />
+            </svg>
+          </div>
+          <input
+            type="search"
+            className="w-full border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 pl-10 py-2"
+            placeholder="Search..."
+            value={searchQuery}
+            onChange={handleSearchChange}
+          />
+        </div>
+
+        <div className="relative w-full sm:w-36 md:w-1/4 lg:w-1/6">
+          <select
+            id="floating_gender"
+            className="peer block w-full text-sm text-gray-900 bg-white rounded-lg border border-gray-300 appearance-none focus:outline-none focus:ring-1 focus:ring-blue-600 focus:border-blue-600 px-3 py-2"
+            value={selectedGender}
+            onChange={handleGenderChange}
+          >
+            <option value="">All</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+            <option value="Others">Others</option>
+          </select>
+          <label
+            htmlFor="floating_gender"
+            className={`absolute text-xs left-3 top-[-8px] bg-white px-1 text-gray-500 peer-focus:text-blue-600 ${
+              selectedGender ? "text-blue-600" : ""
+            }`}
+          >
+            Gender
+          </label>
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="text-center py-5 text-blue-600 font-semibold text-lg">
+          Loading...
+        </div>
+      ) : (
+        <>
+          <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
+            <table className="w-full text-sm text-left text-gray-500">
+              <thead className="text-sm text-gray-700 bg-gray-50">
+                <tr>
+                  <th className="px-6 py-4">S.No</th>
+                  <th className="px-6 py-4">Profile</th>
+                  <th className="px-6 py-4">Name</th>
+                  <th className="px-6 py-4">Gender</th>
+                  <th className="px-6 py-4">Mobile No</th>
+                  <th className="px-6 py-4">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {staff.length > 0 ? (
+                  staff.map((instructor, index) => (
+                    <tr key={instructor._id} className="bg-white border-b">
+                      <th className="px-6 py-4 font-medium text-gray-900">
+                        {(currentPage - 1) * limit + index + 1}
+                      </th>
+                      <td className="px-6 py-4">
+                        <img
+                          src={`${URL}/api/image-proxy/${extractDriveFileId(instructor.photo)}`}
+                          alt={`${instructor.fullName}'s profile`}
+                          className="w-16 h-16 object-cover rounded-full border-2 border-white shadow-md"
+                        />
+                      </td>
+                      <td className="px-6 py-4">{instructor.fullName}</td>
+                      <td className="px-6 py-4">{instructor.gender}</td>
+                      <td className="px-6 py-4">{instructor.mobileNumber}</td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2 mt-4">
+                          <button
+                            onClick={() => navigate(`/admin/staff/${instructor._id}/view`)}
+                            className="bg-gray-100 hover:bg-gray-200 px-2 py-1 rounded"
+                          >
+                            <i className="fa-solid fa-eye text-blue-600"></i>
+                          </button>
+                          <button
+                            onClick={() => navigate(`/admin/staff/${instructor._id}/edit`)}
+                            className="bg-gray-100 hover:bg-gray-200 px-2 py-1 rounded"
+                          >
+                            <i className="fa-solid fa-pen-to-square text-blue-600"></i>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="6" className="text-center py-8 text-red-600">
+                      Staff not found.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {staff.length > 0 && (
+            <Pagination
+              CurrentPage={currentPage}
+              TotalPages={TotalPages}
+              onPageChange={handlePageChange}
+            />
+          )}
+        </>
+      )}
+    </div>
+  );
+};
+
+export default StaffTable;
