@@ -10,6 +10,7 @@ const LearnerSingleAttendance = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, isLoading: authLoading, clearAuthState } = useRole();
+console.log(user);
 
   const [attendanceData, setAttendanceData] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -57,21 +58,21 @@ const LearnerSingleAttendance = () => {
   };
 
   useEffect(() => {
-    if (authLoading) return;
-    if (!user?.user_id) return;
+    if (authLoading) return; // Wait for auth context to load
+
+    if (!user?.user_id) {
+      // clearAuthState(); // redirect
+      return;
+    }
 
     const controller = new AbortController();
-
     const fetchAttendanceData = async () => {
       setLoading(true);
       setError(null);
 
-      if ((fromDate && !toDate) || (!fromDate && toDate)) {
-        setLoading(false);
-        return;
-      }
-
       try {
+        if ((fromDate && !toDate) || (!fromDate && toDate)) return;
+
         const formattedFromDate = fromDate
           ? moment(fromDate).format("YYYY-MM-DD")
           : "";
@@ -83,15 +84,12 @@ const LearnerSingleAttendance = () => {
         const params = {
           page: currentPage,
           limit,
+          search: debouncedSearch,
           classType,
           fromdate: formattedFromDate,
           todate: formattedToDate,
           date: formattedDate,
         };
-
-        if (debouncedSearch.trim().length >= 3) {
-          params.search = debouncedSearch.trim();
-        }
 
         const response = await axios.get(
           `${URL}/api/learner-attendance/${user.user_id}`,
@@ -107,12 +105,13 @@ const LearnerSingleAttendance = () => {
       } catch (error) {
         console.error(error);
         setError("Failed to fetch data");
+
         if (
           error.response &&
           (error.response.status === 401 ||
             error.response.data.message === "Invalid token")
         ) {
-          // clearAuthState();
+          // clearAuthState(); // logout and redirect
         }
       } finally {
         setLoading(false);
@@ -142,43 +141,6 @@ const LearnerSingleAttendance = () => {
     setDate(params.get("date") || "");
   }, [location.search]);
 
-  useEffect(() => {
-  const params = new URLSearchParams(location.search);
-
-  const urlSearch = params.get("search") || "";
-  const urlFromDate = params.get("fromdate") || "";
-  const urlToDate = params.get("todate") || "";
-  const urlClassType = params.get("classType") || "";
-  const urlDate = params.get("date") || "";
-  const urlPage = parseInt(params.get("page")) || 1;
-
-  setSearch(urlSearch);
-  setFromDate(urlFromDate);
-  setToDate(urlToDate);
-  setClassType(urlClassType);
-  setDate(urlDate);
-  setCurrentPage(urlPage);
-
-  // Initial URL normalization — add default query params if missing
-  const shouldUpdate =
-    !params.has("page") ||
-    !params.has("limit") ||
-    params.get("limit") !== "5";
-
-  if (shouldUpdate) {
-    params.set("page", urlPage.toString());
-    params.set("limit", "5");
-
-    if (urlSearch.trim().length < 3) params.delete("search");
-    if (!urlFromDate) params.delete("fromdate");
-    if (!urlToDate) params.delete("todate");
-    if (!urlClassType) params.delete("classType");
-    if (!urlDate) params.delete("date");
-
-    navigate({ search: params.toString() }, { replace: true });
-  }
-}, []);
-
   const handleSearchChange = (e) => {
     const value = e.target.value;
     setSearch(value);
@@ -189,8 +151,7 @@ const LearnerSingleAttendance = () => {
         search: value,
         fromdate: fromDate,
         todate: toDate,
-        date,
-        classType,
+        date: date,
         page: 1,
       });
     }, 2000);
@@ -212,22 +173,12 @@ const LearnerSingleAttendance = () => {
   const handleFromDateChange = (e) => {
     const value = e.target.value;
     setFromDate(value);
-    if (!value) {
-      setToDate("");
-      updateURLParams({
-        fromdate: "",
-        todate: "",
-        search,
-        page: 1,
-      });
-    } else {
-      updateURLParams({
-        fromdate: value,
-        todate: toDate,
-        search,
-        page: 1,
-      });
-    }
+    updateURLParams({
+      fromdate: value,
+      todate: toDate,
+      search,
+      page: 1,
+    });
     setCurrentPage(1);
   };
 
@@ -256,7 +207,6 @@ const LearnerSingleAttendance = () => {
   };
 
   if (authLoading) return <div>Loading...</div>;
-
   return (
     <div className="p-4">
       <div className="flex flex-row items-center justify-between gap-4 mb-4">
@@ -273,6 +223,7 @@ const LearnerSingleAttendance = () => {
             stroke="currentColor"
             strokeWidth="2"
             viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
           >
             <path
               strokeLinecap="round"
@@ -317,6 +268,7 @@ const LearnerSingleAttendance = () => {
               type="date"
               value={fromDate}
               onChange={handleFromDateChange}
+              onFocus={(event) => (event.nativeEvent.target.defaultValue = "")}
               className="w-full px-3 py-2 text-sm text-gray-900 border border-gray-300 rounded-lg peer"
             />
             <label className="absolute left-3 top-[-8px] text-xs bg-white px-1 text-gray-500">
@@ -329,9 +281,8 @@ const LearnerSingleAttendance = () => {
               type="date"
               value={toDate}
               onChange={handleToDateChange}
-             min={fromDate || undefined}
-              disabled={!fromDate}
-              className="w-full px-3 py-2 text-sm text-gray-900 border border-gray-300 rounded-lg peer disabled:bg-gray-100 disabled:cursor-not-allowed"
+              onFocus={(event) => (event.nativeEvent.target.defaultValue = "")}
+              className="w-full px-3 py-2 text-sm text-gray-900 border border-gray-300 rounded-lg peer"
             />
             <label className="absolute left-3 top-[-8px] text-xs bg-white px-1 text-gray-500">
               To
@@ -341,7 +292,9 @@ const LearnerSingleAttendance = () => {
       </div>
 
       {loading ? (
-        <div className="font-semibold text-center text-blue-600">Loading...</div>
+        <div className="font-semibold text-center text-blue-600">
+          Loading...
+        </div>
       ) : (
         <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
           <table className="w-full text-sm text-left text-gray-500">
@@ -357,7 +310,7 @@ const LearnerSingleAttendance = () => {
               </tr>
             </thead>
             <tbody>
-              {attendanceData.length > 0 ? (
+              {attendanceData && attendanceData.length > 0 ? (
                 attendanceData.map((record, index) => (
                   <tr key={record._id} className="bg-white border-b">
                     <td className="px-6 py-4">{index + 1}</td>
@@ -396,16 +349,16 @@ const LearnerSingleAttendance = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="7" className="py-6 text-center text-red-600">
+                  <td colSpan="6" className="py-6 text-center text-red-600">
                     Attendance not found
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
+          {/* {error && <div className="text-center text-red-600">{error}</div>} */}
         </div>
       )}
-
       {!loading && attendanceData.length > 0 && (
         <Pagination
           CurrentPage={currentPage}

@@ -142,43 +142,6 @@ const LearnerSingleAttendance = () => {
     setDate(params.get("date") || "");
   }, [location.search]);
 
-  useEffect(() => {
-  const params = new URLSearchParams(location.search);
-
-  const urlSearch = params.get("search") || "";
-  const urlFromDate = params.get("fromdate") || "";
-  const urlToDate = params.get("todate") || "";
-  const urlClassType = params.get("classType") || "";
-  const urlDate = params.get("date") || "";
-  const urlPage = parseInt(params.get("page")) || 1;
-
-  setSearch(urlSearch);
-  setFromDate(urlFromDate);
-  setToDate(urlToDate);
-  setClassType(urlClassType);
-  setDate(urlDate);
-  setCurrentPage(urlPage);
-
-  // Initial URL normalization — add default query params if missing
-  const shouldUpdate =
-    !params.has("page") ||
-    !params.has("limit") ||
-    params.get("limit") !== "5";
-
-  if (shouldUpdate) {
-    params.set("page", urlPage.toString());
-    params.set("limit", "5");
-
-    if (urlSearch.trim().length < 3) params.delete("search");
-    if (!urlFromDate) params.delete("fromdate");
-    if (!urlToDate) params.delete("todate");
-    if (!urlClassType) params.delete("classType");
-    if (!urlDate) params.delete("date");
-
-    navigate({ search: params.toString() }, { replace: true });
-  }
-}, []);
-
   const handleSearchChange = (e) => {
     const value = e.target.value;
     setSearch(value);

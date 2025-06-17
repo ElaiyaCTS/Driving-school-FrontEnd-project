@@ -1,32 +1,33 @@
-import { useEffect, useState, useRef } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
-import axios from "axios";
-import moment from "moment";
+import { useState, useEffect } from "react";
 import { URL } from "../../App";
+import axios from "axios";
 import Pagination from "../../Components/Pagination";
-import { useRole } from "../../Components/AuthContext/AuthContext";
+import { useNavigate, useLocation } from "react-router-dom";
+import { jwtDecode } from "jwt-decode";
+import moment from "moment";
 
 const LearnerSingleTest = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useRole();
-
   const [tests, setTests] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [limit, setLimit] = useState(5);
   const [searchQuery, setSearchQuery] = useState("");
   const [testType, setTestType] = useState("");
   const [result, setResult] = useState("");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const searchDebounceRef = useRef(null);
-  const controllerRef = useRef(null);
+  const limit = 5;
 
-  const formatDate = (date) =>
-    date ? new Date(date).toISOString().split("T")[0] : "";
+  const token = localStorage.getItem("token");
+  const decoded = token ? jwtDecode(token) : null;
+  const testId = decoded?.user_id;
+
+  const formatDate = (date) => {
+    return date ? new Date(date).toISOString().split("T")[0] : "";
+  };
 
   const updateURLParams = ({
     search,
@@ -35,104 +36,123 @@ const LearnerSingleTest = () => {
     fromDate,
     toDate,
     page,
-    limit,
   }) => {
-    const params = new URLSearchParams();
+    const params = new URLSearchParams(location.search);
 
-    if (search) params.set("search", search);
-    if (testType) params.set("testType", testType);
-    if (result) params.set("result", result);
-    if (fromDate) params.set("fromdate", formatDate(fromDate));
-    if (toDate) params.set("todate", formatDate(toDate));
-    if (page) params.set("page", page);
-    if (limit) params.set("limit", limit);
+    if (search !== undefined) {
+      if (search) {
+        params.set("search", search);
+      } else {
+        params.delete("search");
+      }
+    }
+
+    if (testType !== undefined) {
+      if (testType && testType !== "All") {
+        params.set("testType", testType);
+      } else {
+        params.delete("testType");
+      }
+    }
+
+    if (result !== undefined) {
+      if (result && result !== "All") {
+        params.set("result", result);
+      } else {
+        params.delete("result");
+      }
+    }
+
+    if (fromDate !== undefined) {
+      if (fromDate) {
+        params.set("fromdate", formatDate(fromDate));
+      } else {
+        params.delete("fromdate");
+      }
+    }
+
+    if (toDate !== undefined) {
+      if (toDate) {
+        params.set("todate", formatDate(toDate));
+      } else {
+        params.delete("todate");
+      }
+    }
+
+    if (page !== undefined) {
+      if (page && page > 1) {
+        params.set("page", page);
+      } else {
+        params.delete("page");
+      }
+    }
 
     navigate({ search: params.toString() });
   };
 
-  const fetchTests = async () => {
-    if (!user?.user_id) return;
+  useEffect(() => {
+    const controller = new AbortController();
+    let debounceTimer;
 
-    if (controllerRef.current) controllerRef.current.abort();
-    controllerRef.current = new AbortController();
-
-    if ((fromDate && !toDate) || (!fromDate && toDate)) return;
-    if (fromDate && toDate && new Date(fromDate) > new Date(toDate)) return;
-
-    try {
+    const fetchTests = async () => {
       setLoading(true);
+      try {
+        const token = localStorage.getItem("token");
 
-      const response = await axios.get(`${URL}/api/tests/${user.user_id}`, {
-        withCredentials: true,
-        signal: controllerRef.current.signal,
-        params: {
+        if (fromDate && toDate && new Date(fromDate) > new Date(toDate)) {
+          console.error(
+            "Invalid date range. 'From Date' cannot be greater than 'To Date'."
+          );
+          return;
+        }
+
+        const queryParams = {
           page: currentPage,
           limit,
-          ...(searchQuery ? { search: searchQuery } : {}),
-          ...(testType ? { testType } : {}),
-          ...(result ? { result } : {}),
-          ...(fromDate ? { fromdate: formatDate(fromDate) } : {}),
-          ...(toDate ? { todate: formatDate(toDate) } : {}),
-        },
-      });
+          search: searchQuery,
+          testType,
+          result,
+          fromdate: formatDate(fromDate),
+          todate: formatDate(toDate),
+        };
 
-      setTests(response.data.tests || []);
-      setTotalPages(response.data.totalPages || 1);
-    } catch (error) {
-      if (error.name !== "AbortError") {
-        console.error(error);
+        const response = await axios.get(`${URL}/api/tests/${testId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+          params: queryParams,
+          signal: controller.signal,
+        });
+
+        setTests(response.data.tests || []);
+        setTotalPages(response.data.totalPages || 1);
+      } catch (error) {
+        if (error.name !== "AbortError") {
+          if (
+            error.response &&
+            (error.response.status === 401 ||
+              error.response.data.message === "Invalid token")
+          ) {
+            setTimeout(() => {
+              window.localStorage.clear();
+              navigate("/");
+            }, 2000);
+          }
+        }
+      } finally {
+        setLoading(false);
       }
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
 
-  // On first mount: sync from URL
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const search = params.get("search") || "";
-    const testType = params.get("testType") || "";
-    const result = params.get("result") || "";
-    const from = params.get("fromdate") || "";
-    const to = params.get("todate") || "";
-    const page = parseInt(params.get("page")) || 1;
-    const lim = parseInt(params.get("limit")) || 5;
-
-    setSearchQuery(search);
-    setTestType(testType);
-    setResult(result);
-    setFromDate(from);
-    setToDate(to);
-    setCurrentPage(page);
-    setLimit(lim);
-
-    updateURLParams({
-      search,
-      testType,
-      result,
-      fromDate: from,
-      toDate: to,
-      page,
-      limit: lim,
-    });
-  }, []);
-
-  useEffect(() => {
-    if (!searchQuery) {
-      fetchTests();
-    } else {
-      if (searchDebounceRef.current)
-        clearTimeout(searchDebounceRef.current);
-
-      searchDebounceRef.current = setTimeout(() => {
+    if (searchQuery) {
+      debounceTimer = setTimeout(() => {
         fetchTests();
       }, 2000);
+    } else {
+      fetchTests();
     }
 
     return () => {
-      if (controllerRef.current) controllerRef.current.abort();
-      if (searchDebounceRef.current)
-        clearTimeout(searchDebounceRef.current);
+      clearTimeout(debounceTimer);
+      controller.abort();
     };
   }, [
     searchQuery,
@@ -142,107 +162,111 @@ const LearnerSingleTest = () => {
     toDate,
     currentPage,
     limit,
-    user?.user_id,
+    testId,
   ]);
 
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    setSearchQuery(urlParams.get("search") || "");
+    setTestType(urlParams.get("testType") || "");
+    setResult(urlParams.get("result") || "");
+    setFromDate(urlParams.get("fromdate") || "");
+    setToDate(urlParams.get("todate") || "");
+    setCurrentPage(Number(urlParams.get("page")) || 1);
+  }, [location.search]);
+
   const handleSearch = (e) => {
-    const val = e.target.value;
-    setSearchQuery(val);
+    const value = e.target.value;
+    setSearchQuery(value);
     setCurrentPage(1);
     updateURLParams({
-      search: val,
+      search: value,
       testType,
       result,
       fromDate,
       toDate,
       page: 1,
-      limit,
     });
   };
 
   const handleTestTypeChange = (e) => {
-    const val = e.target.value;
-    setTestType(val);
+    const value = e.target.value;
+    setTestType(value);
     setCurrentPage(1);
     updateURLParams({
       search: searchQuery,
-      testType: val,
+      testType: value,
       result,
       fromDate,
       toDate,
       page: 1,
-      limit,
     });
   };
 
   const handleResultChange = (e) => {
-    const val = e.target.value;
-    setResult(val);
+    const value = e.target.value;
+    setResult(value);
     setCurrentPage(1);
     updateURLParams({
       search: searchQuery,
       testType,
-      result: val,
+      result: value,
       fromDate,
       toDate,
       page: 1,
-      limit,
     });
   };
 
   const handleFromDateChange = (e) => {
-    const val = e.target.value;
-    setFromDate(val);
-    setToDate("");
+    const value = e.target.value;
+    setFromDate(value);
     setCurrentPage(1);
     updateURLParams({
       search: searchQuery,
       testType,
       result,
-      fromDate: val,
-      toDate: "",
+      fromDate: value,
+      toDate,
       page: 1,
-      limit,
     });
   };
 
   const handleToDateChange = (e) => {
-    const val = e.target.value;
-    setToDate(val);
+    const value = e.target.value;
+    setToDate(value);
     setCurrentPage(1);
     updateURLParams({
       search: searchQuery,
       testType,
       result,
       fromDate,
-      toDate: val,
+      toDate: value,
       page: 1,
-      limit,
     });
   };
 
   const handlePageChange = (page) => {
-    setCurrentPage(page);
-    updateURLParams({
-      search: searchQuery,
-      testType,
-      result,
-      fromDate,
-      toDate,
-      page,
-      limit,
-    });
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+      updateURLParams({
+        search: searchQuery,
+        testType,
+        result,
+        fromDate,
+        toDate,
+        page,
+      });
+    }
   };
-
 
   return (
     <div className="p-6">
-      <div className="flex flex-row items-center justify-between gap-4 mb-4">
+      <div className="flex flex-row justify-between items-center gap-4 mb-4">
         <h3 className="text-xl font-bold text-center md:text-left">
           Test History
         </h3>
       </div>
-      <div className="flex flex-col justify-between gap-4 mb-4 md:flex-row md:items-center">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
         <div className="relative w-full md:w-64">
           <svg
             className="absolute left-3 top-2.5 text-gray-400 w-5 h-5"
@@ -262,7 +286,7 @@ const LearnerSingleTest = () => {
 
           <input
             type="text"
-            className="w-full py-2 pl-10 text-sm text-gray-900 border border-gray-300 rounded-lg"
+            className="w-full border border-gray-300 text-gray-900 text-sm rounded-lg pl-10 py-2"
             placeholder="Search..."
             value={searchQuery}
             onChange={handleSearch}
@@ -270,7 +294,7 @@ const LearnerSingleTest = () => {
 
           {searchQuery && (
             <button
-              className="absolute text-gray-500 transform -translate-y-1/2 right-3 top-1/2 hover:text-blue-500"
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-blue-500"
               onClick={() => {
                 setSearchQuery("");
                 updateURLParams({
@@ -301,11 +325,11 @@ const LearnerSingleTest = () => {
           )}
         </div>
 
-        <div className="flex flex-col w-full gap-4 sm:grid sm:grid-cols-2 md:flex md:flex-row md:w-auto">
+        <div className="flex flex-col sm:grid sm:grid-cols-2 md:flex md:flex-row gap-4 w-full md:w-auto">
           <div className="relative w-full md:w-36">
             <select
               id="floating_testType"
-              className="block w-full px-3 py-2 text-sm text-gray-900 bg-transparent border border-gray-300 rounded-lg peer focus:outline-none focus:ring-0 focus:border-blue-600"
+              className="peer block w-full text-sm text-gray-900 bg-transparent rounded-lg border border-gray-300 focus:outline-none focus:ring-0 focus:border-blue-600 px-3 py-2"
               value={testType}
               onChange={handleTestTypeChange}
             >
@@ -326,7 +350,7 @@ const LearnerSingleTest = () => {
           <div className="relative w-full md:w-36">
             <select
               id="floating_result"
-              className="block w-full px-3 py-2 text-sm text-gray-900 bg-transparent border border-gray-300 rounded-lg peer focus:outline-none focus:ring-0 focus:border-blue-600"
+              className="peer block w-full text-sm text-gray-900 bg-transparent rounded-lg border border-gray-300 focus:outline-none focus:ring-0 focus:border-blue-600 px-3 py-2"
               value={result}
               onChange={handleResultChange}
             >
@@ -351,7 +375,7 @@ const LearnerSingleTest = () => {
               value={fromDate}
               onChange={handleFromDateChange}
               onFocus={(event) => (event.nativeEvent.target.defaultValue = "")}
-              className="w-full px-3 py-2 text-sm text-gray-900 border border-gray-300 rounded-lg peer"
+              className="peer border border-gray-300 text-gray-900 text-sm rounded-lg px-3 py-2 w-full"
             />
             <label className="absolute left-3 top-[-8px] text-xs bg-white px-1 text-gray-500">
               From
@@ -364,11 +388,8 @@ const LearnerSingleTest = () => {
               value={toDate}
               onChange={handleToDateChange}
               onFocus={(event) => (event.nativeEvent.target.defaultValue = "")}
-              min={fromDate || undefined}
-              disabled={!fromDate}
-              className="w-full px-3 py-2 text-sm text-gray-900 border border-gray-300 rounded-lg peer disabled:bg-gray-100 disabled:cursor-not-allowed"
+              className="peer border border-gray-300 text-gray-900 text-sm rounded-lg px-3 py-2 w-full"
             />
-            
             <label className="absolute left-3 top-[-8px] text-xs bg-white px-1 text-gray-500">
               To
             </label>
@@ -377,7 +398,7 @@ const LearnerSingleTest = () => {
       </div>
 
       {loading ? (
-        <div className="font-semibold text-center text-blue-600">
+        <div className="text-center font-semibold text-blue-600">
           Loading...
         </div>
       ) : tests.length === 0 ? (

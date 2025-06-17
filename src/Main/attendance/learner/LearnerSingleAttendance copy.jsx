@@ -4,13 +4,11 @@ import moment from "moment";
 import { useNavigate, useLocation } from "react-router-dom";
 import { URL } from "../../../App";
 import Pagination from "../../../Components/Pagination";
-import { useRole } from "../../../Components/AuthContext/AuthContext";
+import { jwtDecode } from "jwt-decode";
 
 const LearnerSingleAttendance = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, isLoading: authLoading, clearAuthState } = useRole();
-
   const [attendanceData, setAttendanceData] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -24,8 +22,12 @@ const LearnerSingleAttendance = () => {
   const [debouncedSearch, setDebouncedSearch] = useState(search);
   const [date, setDate] = useState("");
 
-  const debounceTimeout = useRef(null);
   const limit = 5;
+
+  const token = localStorage.getItem("token");
+  const decoded = jwtDecode(token);
+  const id = decoded?.user_id;
+  const debounceTimeout = useRef(null);
 
   const updateURLParams = ({
     search,
@@ -38,40 +40,47 @@ const LearnerSingleAttendance = () => {
     const params = new URLSearchParams(location.search);
 
     if (search !== undefined) {
-      search.trim().length >= 3
-        ? params.set("search", search)
-        : params.delete("search");
+      if (search.trim().length >= 3) {
+        params.set("search", search);
+      } else {
+        params.delete("search");
+      }
     }
-    fromdate !== undefined &&
-      (fromdate ? params.set("fromdate", fromdate) : params.delete("fromdate"));
-    todate !== undefined &&
-      (todate ? params.set("todate", todate) : params.delete("todate"));
-    date !== undefined &&
-      (date ? params.set("date", date) : params.delete("date"));
-    classType !== undefined &&
-      (classType ? params.set("classType", classType) : params.delete("classType"));
-    page !== undefined &&
-      (page > 1 ? params.set("page", page) : params.delete("page"));
+
+    if (fromdate !== undefined) {
+      fromdate ? params.set("fromdate", fromdate) : params.delete("fromdate");
+    }
+
+    if (todate !== undefined) {
+      todate ? params.set("todate", todate) : params.delete("todate");
+    }
+
+    if (date !== undefined) {
+      date ? params.set("date", date) : params.delete("date");
+    }
+
+    if (classType !== undefined) {
+      classType
+        ? params.set("classType", classType)
+        : params.delete("classType");
+    }
+
+    if (page !== undefined) {
+      page > 1 ? params.set("page", page) : params.delete("page");
+    }
 
     navigate({ search: params.toString() });
   };
 
   useEffect(() => {
-    if (authLoading) return;
-    if (!user?.user_id) return;
-
     const controller = new AbortController();
-
     const fetchAttendanceData = async () => {
       setLoading(true);
       setError(null);
 
-      if ((fromDate && !toDate) || (!fromDate && toDate)) {
-        setLoading(false);
-        return;
-      }
-
       try {
+        if (!token || !id) return;
+
         const formattedFromDate = fromDate
           ? moment(fromDate).format("YYYY-MM-DD")
           : "";
@@ -80,24 +89,25 @@ const LearnerSingleAttendance = () => {
           : "";
         const formattedDate = date ? moment(date).format("YYYY-MM-DD") : "";
 
+        if ((fromDate && !toDate) || (!fromDate && toDate)) return;
+
         const params = {
           page: currentPage,
           limit,
+          search: debouncedSearch,
           classType,
           fromdate: formattedFromDate,
           todate: formattedToDate,
           date: formattedDate,
         };
 
-        if (debouncedSearch.trim().length >= 3) {
-          params.search = debouncedSearch.trim();
-        }
-
         const response = await axios.get(
-          `${URL}/api/learner-attendance/${user.user_id}`,
+          `${URL}/api/learner-attendance/${id}`,
           {
             params,
-            withCredentials: true,
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
             signal: controller.signal,
           }
         );
@@ -105,14 +115,16 @@ const LearnerSingleAttendance = () => {
         setAttendanceData(response.data.data || []);
         setTotalPages(response.data.totalPages || 1);
       } catch (error) {
-        console.error(error);
-        setError("Failed to fetch data");
+        setError(error.message);
         if (
           error.response &&
           (error.response.status === 401 ||
             error.response.data.message === "Invalid token")
         ) {
-          // clearAuthState();
+          setTimeout(() => {
+            localStorage.clear();
+            navigate("/");
+          }, 2000);
         }
       } finally {
         setLoading(false);
@@ -120,82 +132,43 @@ const LearnerSingleAttendance = () => {
     };
 
     fetchAttendanceData();
+
     return () => controller.abort();
-  }, [
-    user,
-    authLoading,
-    fromDate,
-    toDate,
-    currentPage,
-    classType,
-    date,
-    debouncedSearch,
-  ]);
+  }, [fromDate, toDate, currentPage, classType, date, debouncedSearch]);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
-    setSearch(params.get("search") || "");
-    setFromDate(params.get("fromdate") || "");
-    setToDate(params.get("todate") || "");
-    setCurrentPage(parseInt(params.get("page")) || 1);
-    setClassType(params.get("classType") || "");
-    setDate(params.get("date") || "");
+    const newSearch = params.get("search") || "";
+    const newFromDate = params.get("fromdate") || "";
+    const newToDate = params.get("todate") || "";
+    const newPage = parseInt(params.get("page")) || 1;
+    const newClassType = params.get("classType") || "";
+    const newDate = params.get("date") || "";
+
+    if (newSearch !== search) setSearch(newSearch);
+    if (newFromDate !== fromDate) setFromDate(newFromDate);
+    if (newToDate !== toDate) setToDate(newToDate);
+    if (newPage !== currentPage) setCurrentPage(newPage);
+    if (newClassType !== classType) setClassType(newClassType);
+    if (newDate !== date) setDate(newDate);
   }, [location.search]);
-
-  useEffect(() => {
-  const params = new URLSearchParams(location.search);
-
-  const urlSearch = params.get("search") || "";
-  const urlFromDate = params.get("fromdate") || "";
-  const urlToDate = params.get("todate") || "";
-  const urlClassType = params.get("classType") || "";
-  const urlDate = params.get("date") || "";
-  const urlPage = parseInt(params.get("page")) || 1;
-
-  setSearch(urlSearch);
-  setFromDate(urlFromDate);
-  setToDate(urlToDate);
-  setClassType(urlClassType);
-  setDate(urlDate);
-  setCurrentPage(urlPage);
-
-  // Initial URL normalization — add default query params if missing
-  const shouldUpdate =
-    !params.has("page") ||
-    !params.has("limit") ||
-    params.get("limit") !== "5";
-
-  if (shouldUpdate) {
-    params.set("page", urlPage.toString());
-    params.set("limit", "5");
-
-    if (urlSearch.trim().length < 3) params.delete("search");
-    if (!urlFromDate) params.delete("fromdate");
-    if (!urlToDate) params.delete("todate");
-    if (!urlClassType) params.delete("classType");
-    if (!urlDate) params.delete("date");
-
-    navigate({ search: params.toString() }, { replace: true });
-  }
-}, []);
 
   const handleSearchChange = (e) => {
     const value = e.target.value;
     setSearch(value);
     if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
+
     debounceTimeout.current = setTimeout(() => {
       setDebouncedSearch(value);
       updateURLParams({
         search: value,
         fromdate: fromDate,
         todate: toDate,
-        date,
-        classType,
+        date: date,
         page: 1,
       });
     }, 2000);
   };
-
   const handleClassTypeChange = (e) => {
     const value = e.target.value;
     setClassType(value);
@@ -208,26 +181,27 @@ const LearnerSingleAttendance = () => {
     });
     setCurrentPage(1);
   };
+  // const handleDateChange = (e) => {
+  //   const value = e.target.value;
+  //   setDate(value);
+  //   updateURLParams({
+  //     date: value,
+  //     search,
+  //     classType,
+  //     page: 1,
+  //   });
+  //   setCurrentPage(1);
+  // };
 
   const handleFromDateChange = (e) => {
     const value = e.target.value;
     setFromDate(value);
-    if (!value) {
-      setToDate("");
-      updateURLParams({
-        fromdate: "",
-        todate: "",
-        search,
-        page: 1,
-      });
-    } else {
-      updateURLParams({
-        fromdate: value,
-        todate: toDate,
-        search,
-        page: 1,
-      });
-    }
+    updateURLParams({
+      fromdate: value,
+      todate: toDate,
+      search,
+      page: 1,
+    });
     setCurrentPage(1);
   };
 
@@ -255,8 +229,6 @@ const LearnerSingleAttendance = () => {
     }
   };
 
-  if (authLoading) return <div>Loading...</div>;
-
   return (
     <div className="p-4">
       <div className="flex flex-row items-center justify-between gap-4 mb-4">
@@ -273,6 +245,7 @@ const LearnerSingleAttendance = () => {
             stroke="currentColor"
             strokeWidth="2"
             viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
           >
             <path
               strokeLinecap="round"
@@ -317,6 +290,7 @@ const LearnerSingleAttendance = () => {
               type="date"
               value={fromDate}
               onChange={handleFromDateChange}
+              onFocus={(event) => (event.nativeEvent.target.defaultValue = "")}
               className="w-full px-3 py-2 text-sm text-gray-900 border border-gray-300 rounded-lg peer"
             />
             <label className="absolute left-3 top-[-8px] text-xs bg-white px-1 text-gray-500">
@@ -329,9 +303,8 @@ const LearnerSingleAttendance = () => {
               type="date"
               value={toDate}
               onChange={handleToDateChange}
-             min={fromDate || undefined}
-              disabled={!fromDate}
-              className="w-full px-3 py-2 text-sm text-gray-900 border border-gray-300 rounded-lg peer disabled:bg-gray-100 disabled:cursor-not-allowed"
+              onFocus={(event) => (event.nativeEvent.target.defaultValue = "")}
+              className="w-full px-3 py-2 text-sm text-gray-900 border border-gray-300 rounded-lg peer"
             />
             <label className="absolute left-3 top-[-8px] text-xs bg-white px-1 text-gray-500">
               To
@@ -341,7 +314,9 @@ const LearnerSingleAttendance = () => {
       </div>
 
       {loading ? (
-        <div className="font-semibold text-center text-blue-600">Loading...</div>
+        <div className="font-semibold text-center text-blue-600">
+          Loading...
+        </div>
       ) : (
         <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
           <table className="w-full text-sm text-left text-gray-500">
@@ -357,7 +332,7 @@ const LearnerSingleAttendance = () => {
               </tr>
             </thead>
             <tbody>
-              {attendanceData.length > 0 ? (
+              {attendanceData && attendanceData.length > 0 ? (
                 attendanceData.map((record, index) => (
                   <tr key={record._id} className="bg-white border-b">
                     <td className="px-6 py-4">{index + 1}</td>
@@ -396,16 +371,16 @@ const LearnerSingleAttendance = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="7" className="py-6 text-center text-red-600">
+                  <td colSpan="6" className="py-6 text-center text-red-600">
                     Attendance not found
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
+          {/* {error && <div className="text-center text-red-600">{error}</div>} */}
         </div>
       )}
-
       {!loading && attendanceData.length > 0 && (
         <Pagination
           CurrentPage={currentPage}

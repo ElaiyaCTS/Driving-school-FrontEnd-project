@@ -9,6 +9,7 @@ import { useRole } from "./AuthContext/AuthContext"; // adjust path as needed
 
 function Navbar() {
   const {role, user,setUser,setRole,clearAuthState} =  useRole();
+console.log(user);
 
   const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState({ Name: null, photo: null });
@@ -26,7 +27,7 @@ function Navbar() {
 
   return (
     <React.Fragment>
-      <nav className="fixed top-0 z-50 w-full flex flex-col justify-center h-20 bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+      <nav className="fixed top-0 z-50 flex flex-col justify-center w-full h-20 bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700">
         <div className="px-3 py-3 lg:px-5 lg:pl-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center justify-start rtl:justify-end">
@@ -55,15 +56,15 @@ function Navbar() {
               </button>
               <Link
                 reloadDocument
-                className="flex items-center ms-2 mt-1 gap-3"
+                className="flex items-center gap-3 mt-1 ms-2"
               >
                 <img src={logo} className="w-8 sm:w-10" alt=" " />
-                <h1 className="text-lg font-extrabold sm:text-2xl whitespace-nowrap text-blue-600 dark:text-white">
+                <h1 className="text-lg font-extrabold text-blue-600 sm:text-2xl whitespace-nowrap dark:text-white">
                   Ganesh Driving School
                 </h1>
               </Link>
             </div>
-            <div className="hidden sm:flex items-center">
+            <div className="items-center hidden sm:flex">
               <div className="flex items-center">
                 <div>
                   <button
@@ -79,7 +80,7 @@ function Navbar() {
                             )}`
                           : ""
                       }
-                      className="w-9 h-9 rounded-full"
+                      className="rounded-full w-9 h-9"
                       alt="user photo"
                     />
                   </button>
