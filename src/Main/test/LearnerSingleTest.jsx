@@ -9,7 +9,7 @@ import { useRole } from "../../Components/AuthContext/AuthContext";
 const LearnerSingleTest = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useRole();
+      const {role, user,setUser,setRole,clearAuthState} =  useRole();
 
   const [tests, setTests] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -79,9 +79,18 @@ const LearnerSingleTest = () => {
       setTests(response.data.tests || []);
       setTotalPages(response.data.totalPages || 1);
     } catch (error) {
-      if (error.name !== "AbortError") {
-        console.error(error);
-      }
+      // setErrors(error.message);
+          if (
+            error.response &&
+            (error.response.status === 401 ||
+              error.response.data.message === "Invalid token")
+          ) {
+            setTimeout(() => {
+             clearAuthState();
+              // navigate("/");
+            }, 2000);
+          }
+      
     } finally {
       setLoading(false);
     }

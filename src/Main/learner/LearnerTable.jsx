@@ -116,6 +116,7 @@ const LearnerTable = () => {
 
         const response = await axios.get(`${URL}/api/user/learners`, {
           params,
+          withCredentials: true,
           signal: controller.signal,
         });
 
@@ -227,7 +228,7 @@ const LearnerTable = () => {
         <div className="w-full md:w-1/3">
           <div className="relative">
             <div className="absolute inset-y-0 flex items-center pointer-events-none left-3">
-              <i className="fas fa-search text-gray-500"></i>
+              <i className="text-gray-500 fas fa-search"></i>
             </div>
             <input
               type="search"

@@ -111,8 +111,8 @@ const InsLearnerAttTable = () => {
       const response = await axios.get(
         `${URL}/api/learner-attendance/createdBy/${instructorId}`,
         {
-          headers: { Authorization: `Bearer ${token}` },
-          params,
+          withCredentials: true,
+          params, 
         }
       );
 

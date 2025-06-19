@@ -22,15 +22,15 @@ const MarkIns = () => {
 
   useEffect(() => {
     const fetchInstructors = async () => {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        console.error("Token is missing");
-        return;
-      }
+      // const token = localStorage.getItem("token");
+      // if (!token) {
+      //   console.error("Token is missing");
+      //   return;
+      // }
 
       try {
         const response = await fetch(`${URL}/api/user/instructors`, {
-          headers: { Authorization: `Bearer ${token}` },
+         withCredentials: true,
         });
         const data = await response.json();
 

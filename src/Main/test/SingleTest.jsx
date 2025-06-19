@@ -5,10 +5,13 @@ import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import moment from "moment";
 import { FaSyncAlt } from "react-icons/fa";
+import { useRole } from "../../Components/AuthContext/AuthContext";
 
 const SingleTest = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const {role, user,setUser,setRole,clearAuthState} =  useRole();
+
   const [tests, setTests] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -39,7 +42,7 @@ const SingleTest = () => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const token = localStorage.getItem("token");
+      
         const queryParams = {
           page: currentPage,
           testType,
@@ -51,7 +54,7 @@ const SingleTest = () => {
         };
 
         const { data } = await axios.get(`${URL}/api/tests/${id}`, {
-          headers: { Authorization: `Bearer ${token}` },
+          withCredentials: true,
           params: queryParams,
           signal: controller.signal,
         });
@@ -65,7 +68,7 @@ const SingleTest = () => {
             error.response.data.message === "Invalid token")
         ) {
           setTimeout(() => {
-            localStorage.clear();
+            clearAuthState();
             navigate("/");
           }, 2000);
         }

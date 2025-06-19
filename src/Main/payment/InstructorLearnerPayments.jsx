@@ -6,12 +6,14 @@ import axios from "axios";
 import moment from "moment";
 import Pagination from "../../Components/Pagination";
 import { extractDriveFileId } from "../../Components/ImageProxyRouterFunction/funtion.js";
+import { useRole } from "../../Components/AuthContext/AuthContext";
 
 const InstructorLearnerPayments = () => {
   const navigate = useNavigate();
+    const {role, user,setUser,setRole,clearAuthState} =  useRole();
+
   const location = useLocation();
-  const token = localStorage.getItem("token");
-  const decoded = token ? jwtDecode(token) : null;
+  const decoded = user ? user : null;
   const instructorId = decoded?.user_id;
 
   const [payments, setPayments] = useState([]);
@@ -101,9 +103,7 @@ const InstructorLearnerPayments = () => {
               page: currentPage,
               limit: itemsPerPage,
             },
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
+            withCredentials: true,
             signal: controller.signal,
           }
         );
@@ -117,7 +117,7 @@ const InstructorLearnerPayments = () => {
             error.response.data.message === "Invalid token")
         ) {
           setTimeout(() => {
-            localStorage.clear();
+            clearAuthState();
             navigate("/");
           }, 2000);
         }

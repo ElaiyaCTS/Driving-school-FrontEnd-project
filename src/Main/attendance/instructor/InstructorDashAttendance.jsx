@@ -53,9 +53,8 @@ const InstructorDashAttendance = () => {
               fromdate: formatDate(fromDate),
               todate: formatDate(toDate),
             },
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
+                   withCredentials: true,
+
           }
         );
 

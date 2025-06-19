@@ -67,10 +67,7 @@ const UpdateCourse = () => {
       const token = localStorage.getItem("token");
 
       await axios.put(`${URL}/api/courses/${id}`, course, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+       withCredentials: true, });
 
       setToastOpen(true);
       setTimeout(() => {

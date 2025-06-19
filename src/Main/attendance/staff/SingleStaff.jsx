@@ -50,9 +50,8 @@ const SingleStaff = () => {
           const response = await axios.get(
             `${URL}/api/admin/staff-attendance/${id}?${queryParams.toString()}`,
             {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
+                        withCredentials: true,
+
               signal: controller.signal,
             }
           );
@@ -102,7 +101,7 @@ const SingleStaff = () => {
 
   return (
     <div className="p-4">
-      <div className="flex flex-row justify-between items-center gap-4 mb-4">
+      <div className="flex flex-row items-center justify-between gap-4 mb-4">
         <h3 className="text-base font-semibold">Attendance History</h3>
         <FaSyncAlt
           className="text-blue-500 cursor-pointer hover:text-blue-600"
@@ -112,7 +111,7 @@ const SingleStaff = () => {
         />
       </div>
 
-      <div className="flex flex-col md:flex-row md:items-center justify-between space-y-2 md:space-y-0 mb-4">
+      <div className="flex flex-col justify-between mb-4 space-y-2 md:flex-row md:items-center md:space-y-0">
         <div className="relative w-full md:w-1/3">
           <svg
             className="absolute left-3 top-2.5 text-gray-400 w-5 h-5"
@@ -130,14 +129,14 @@ const SingleStaff = () => {
           </svg>
           <input
             type="text"
-            className="w-full border border-gray-300 text-gray-900 text-sm rounded-lg pl-10 py-2"
+            className="w-full py-2 pl-10 text-sm text-gray-900 border border-gray-300 rounded-lg"
             placeholder="Search..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
           {searchTerm && (
             <button
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-blue-500"
+              className="absolute text-gray-500 transform -translate-y-1/2 right-3 top-1/2 hover:text-blue-500"
               onClick={() => setSearchTerm("")}
             >
               <svg
@@ -157,11 +156,11 @@ const SingleStaff = () => {
           )}
         </div>
 
-        <div className="flex flex-col md:flex-row md:space-x-4 w-full md:w-auto items-center">
+        <div className="flex flex-col items-center w-full md:flex-row md:space-x-4 md:w-auto">
           <div className="relative w-full sm:w-36">
             <select
               id="floating_status"
-              className="peer block w-full text-sm text-gray-900 bg-transparent rounded-lg border border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 px-3 py-2"
+              className="block w-full px-3 py-2 text-sm text-gray-900 bg-transparent border border-gray-300 rounded-lg appearance-none peer focus:outline-none focus:ring-0 focus:border-blue-600"
               value={status}
               onChange={(e) => setStatus(e.target.value)}
             >
@@ -185,7 +184,7 @@ const SingleStaff = () => {
               id="floating_from_date"
               value={fromDate}
               onChange={(e) => setFromDate(e.target.value)}
-              className="peer border border-gray-300 text-gray-900 text-sm rounded-lg px-3 py-2"
+              className="px-3 py-2 text-sm text-gray-900 border border-gray-300 rounded-lg peer"
               placeholder=" "
             />
             <label className="absolute left-3 top-[-8px] text-xs bg-white px-1 text-gray-500">
@@ -200,7 +199,7 @@ const SingleStaff = () => {
               value={toDate}
               onChange={(e) => setToDate(e.target.value)}
               onFocus={(event) => (event.nativeEvent.target.defaultValue = "")}
-              className="peer border border-gray-300 text-gray-900 text-sm rounded-lg px-3 py-2"
+              className="px-3 py-2 text-sm text-gray-900 border border-gray-300 rounded-lg peer"
               placeholder=" "
             />
             <label className="absolute left-3 top-[-8px] text-xs bg-white px-1 text-gray-500">
@@ -210,12 +209,12 @@ const SingleStaff = () => {
         </div>
       </div>
       {loading ? (
-        <div className="text-center py-5 text-blue-600 font-semibold text-lg">
+        <div className="py-5 text-lg font-semibold text-center text-blue-600">
           Loading...
         </div>
       ) : attendance.length > 0 ? (
         <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
-          <table className="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
+          <table className="w-full text-sm text-left text-gray-500 rtl:text-right dark:text-gray-400">
             <thead className="text-sm text-gray-700 bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
               <tr className="bg-gray-100">
                 <th className="px-6 py-4">S.No</th>
@@ -274,7 +273,7 @@ const SingleStaff = () => {
           </table>
         </div>
       ) : (
-        <p className="text-center py-4 text-red-500">Attendance not found</p>
+        <p className="py-4 text-center text-red-500">Attendance not found</p>
       )}
       {attendance.length > 0 && (
         <Pagination

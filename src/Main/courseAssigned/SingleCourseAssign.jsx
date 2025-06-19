@@ -37,9 +37,8 @@ const SingleCourseAssign = () => {
         const response = await axios.get(
           `${URL}/api/course-assigned/${id}?${queryParams}`,
           {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
+                                   withCredentials: true,
+
             signal: controller.signal,
           }
         );
@@ -93,7 +92,7 @@ const SingleCourseAssign = () => {
   return (
     <>
       <div className="p-4">
-        <div className="flex flex-row justify-between items-center gap-4 mb-4">
+        <div className="flex flex-row items-center justify-between gap-4 mb-4">
           <h3 className="text-base font-semibold">Course History</h3>
           <FaSyncAlt
             className="text-blue-500 cursor-pointer hover:text-blue-600"
@@ -103,17 +102,17 @@ const SingleCourseAssign = () => {
           />
         </div>
 
-        <div className="flex flex-col md:flex-row md:items-center justify-between space-y-2 md:space-y-0 mb-4">
+        <div className="flex flex-col justify-between mb-4 space-y-2 md:flex-row md:items-center md:space-y-0">
           <div className="relative w-full md:w-1/3">
             <input
               type="text"
-              className="w-full border border-gray-300 text-gray-900 text-sm rounded-lg pl-10 pr-10 py-2"
+              className="w-full py-2 pl-10 pr-10 text-sm text-gray-900 border border-gray-300 rounded-lg"
               placeholder="Search"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
             <svg
-              className="w-4 h-4 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2"
+              className="absolute w-4 h-4 text-gray-500 -translate-y-1/2 left-3 top-1/2"
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
               viewBox="0 0 20 20"
@@ -129,7 +128,7 @@ const SingleCourseAssign = () => {
             {search && (
               <button
                 type="button"
-                className="absolute inset-y-0 right-3 flex items-center text-gray-500"
+                className="absolute inset-y-0 flex items-center text-gray-500 right-3"
                 onClick={() => setSearch("")}
               >
                 <svg
@@ -150,11 +149,11 @@ const SingleCourseAssign = () => {
             )}
           </div>
 
-          <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto">
+          <div className="flex flex-col w-full gap-3 md:flex-row md:w-auto">
             <div className="relative w-full md:w-48">
               <select
                 id="floating_status_one"
-                className="peer block w-full text-sm text-gray-900 bg-transparent rounded-lg border border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 px-3 py-2"
+                className="block w-full px-3 py-2 text-sm text-gray-900 bg-transparent border border-gray-300 rounded-lg appearance-none peer focus:outline-none focus:ring-0 focus:border-blue-600"
                 value={statusOne}
                 onChange={(e) => setStatusOne(e.target.value)}
               >
@@ -176,7 +175,7 @@ const SingleCourseAssign = () => {
             <div className="relative w-full md:w-48">
               <select
                 id="floating_status_two"
-                className="peer block w-full text-sm text-gray-900 bg-transparent rounded-lg border border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 px-3 py-2"
+                className="block w-full px-3 py-2 text-sm text-gray-900 bg-transparent border border-gray-300 rounded-lg appearance-none peer focus:outline-none focus:ring-0 focus:border-blue-600"
                 value={statusTwo}
                 onChange={(e) => setStatusTwo(e.target.value)}
               >
@@ -196,13 +195,13 @@ const SingleCourseAssign = () => {
           </div>
         </div>
         {loading ? (
-          <div className="text-center py-5 text-blue-600 font-semibold text-lg">
+          <div className="py-5 text-lg font-semibold text-center text-blue-600">
             Loading...
           </div>
         ) : (
           <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
             <table className="w-full text-sm text-gray-500">
-              <thead className="text-sm text-gray-700 text-left bg-gray-50">
+              <thead className="text-sm text-left text-gray-700 bg-gray-50">
                 <tr>
                   <th className="px-6 py-4">S.No</th>
                   <th className="px-6 py-4">Course</th>
@@ -254,7 +253,7 @@ const SingleCourseAssign = () => {
                           }`}
                           disabled={assignment.statusOne === "Completed"}
                         >
-                          <i className="fa-solid fa-pen-to-square text-blue-600"></i>
+                          <i className="text-blue-600 fa-solid fa-pen-to-square"></i>
                         </button>
                       </td>
                     </tr>
@@ -263,7 +262,7 @@ const SingleCourseAssign = () => {
                   <tr>
                     <td
                       colSpan="7"
-                      className="text-center text-red-600 py-6 bg-white border-b"
+                      className="py-6 text-center text-red-600 bg-white border-b"
                     >
                       Courses not found
                     </td>

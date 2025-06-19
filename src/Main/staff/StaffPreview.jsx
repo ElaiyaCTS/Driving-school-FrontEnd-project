@@ -5,9 +5,12 @@ import SingleStaff from "../attendance/staff/SingleStaff";
 import axios from "axios";
 import moment from "moment";
 import { extractDriveFileId } from "../../Components/ImageProxyRouterFunction/funtion.js";
+import { useRole } from "../../Components/AuthContext/AuthContext";
 
 const StaffPreview = () => {
   const navigate = useNavigate();
+        const {role, user,setUser,setRole,clearAuthState} =  useRole();
+
   const { id } = useParams();
   const [staff, setStaff] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -15,15 +18,9 @@ const StaffPreview = () => {
   useEffect(() => {
     const fetchstaff = async () => {
       try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          console.error("No token found");
-        }
-
+    
         const response = await axios.get(`${URL}/api/staff/${id}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          withCredentials: true,
         });
 
         setStaff(response.data.data);

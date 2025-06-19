@@ -2,9 +2,13 @@ import { useState, useEffect } from "react";
 import { URL as BURL } from "../../App";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { useRole } from "../../Components/AuthContext/AuthContext.jsx"; // adjust path as needed
 
 const NewRegistration = () => {
   const navigate = useNavigate();
+  const {role, user,setUser,setRole,clearAuthState} =  useRole();
+console.log(user);
+
   const [newLearner, setNewLearner] = useState({
     fullName: "",
     fathersName: "",
@@ -77,7 +81,7 @@ const NewRegistration = () => {
     setValidationErrors({});
 
     setLoading(true);
-    const token = localStorage.getItem("token");
+    const token = user
 
     const formData = new FormData();
     for (const key in newLearner) {
@@ -93,10 +97,7 @@ const NewRegistration = () => {
 
     try {
       await axios.post(`${BURL}/api/admin/create-Learner`, formData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "multipart/form-data",
-        },
+        withCredentials: true,
       });
 
       setToastOpen(true);

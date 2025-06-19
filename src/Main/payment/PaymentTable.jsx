@@ -5,6 +5,7 @@ import Pagination from "../../Components/Pagination";
 import moment from "moment";
 import { useNavigate, useLocation } from "react-router-dom";
 import { extractDriveFileId } from "../../Components/ImageProxyRouterFunction/funtion.js";
+import { useRole } from "../../Components/AuthContext/AuthContext";
 
 const PaymentTable = () => {
   const [payments, setPayments] = useState([]);
@@ -18,6 +19,8 @@ const PaymentTable = () => {
 
   const navigate = useNavigate();
   const location = useLocation();
+        const {role, user,setUser,setRole,clearAuthState} =  useRole();
+
   const itemsPerPage = 10;
 
   const formatDate = (date) => {
@@ -72,8 +75,9 @@ useEffect(() => {
       });
 
       const response = await axios.get(`${URL}/api/payments`, {
-        signal: searchTerm.trim() ? controller.signal : undefined,
         params,
+        withCredentials: true,
+        signal: searchTerm.trim() ? controller.signal : undefined,
       });
 
       setPayments(response.data.payments);
@@ -85,7 +89,7 @@ useEffect(() => {
           error.response.data.message === "Invalid token")
       ) {
         setTimeout(() => {
-          localStorage.clear();
+         clearAuthState();
           navigate("/");
         }, 2000);
       }

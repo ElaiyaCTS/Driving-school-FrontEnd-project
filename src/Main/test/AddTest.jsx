@@ -3,9 +3,11 @@ import { URL } from "../../App";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { extractDriveFileId } from "../../Components/ImageProxyRouterFunction/funtion.js";
+import { useRole } from "../../Components/AuthContext/AuthContext";
 
 const AddTest = () => {
   const navigate = useNavigate();
+      const {role, user,setUser,setRole,clearAuthState} =  useRole();
 
   const [learners, setLearners] = useState([]);
   const [testType, setTestType] = useState("");
@@ -22,16 +24,25 @@ const AddTest = () => {
   useEffect(() => {
     const fetchLearners = async () => {
       try {
-        const token = localStorage.getItem("token");
-        const response = await fetch(`${URL}/api/user/learners`, {
-          method: "GET",
-          headers: { Authorization: `Bearer ${token}` },
+        
+        const response = await axios.get(`${URL}/api/user/learners`, {
+         withCredentials: true,
         });
 
         const data = await response.json();
         setLearners(data.learners);
       } catch (error) {
-        // console.error("Error fetching learners:", error.message);
+      setErrors(error.message);
+          if (
+            error.response &&
+            (error.response.status === 401 ||
+              error.response.data.message === "Invalid token")
+          ) {
+            setTimeout(() => {
+             clearAuthState();
+              // navigate("/");
+            }, 2000);
+          }
       }
     };
     fetchLearners();
@@ -52,7 +63,6 @@ const AddTest = () => {
     event.preventDefault();
     if (!validateForm()) return;
 
-    const token = localStorage.getItem("token");
    
     const testData = {
       learnerId: selectedLearner,
@@ -63,7 +73,7 @@ const AddTest = () => {
 
     try {
       await axios.post(`${URL}/api/tests`, testData, {
-        headers: { Authorization: `Bearer ${token}` },
+       withCredentials: true,
       });
 
       setToastOpen(true);
@@ -80,8 +90,8 @@ const AddTest = () => {
             error.response.data.message === "Invalid token")
         ) {
           return setTimeout(() => {
-            window.localStorage.clear();
-            navigate("/");
+            clearAuthState();
+            // navigate("/");
           }, 2000);
         }
       }

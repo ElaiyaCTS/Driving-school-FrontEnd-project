@@ -4,22 +4,22 @@ import { URL } from "../../App";
 import axios from "axios";
 import moment from "moment";
 import { jwtDecode } from "jwt-decode";
+import { useRole } from "../../Components/AuthContext/AuthContext";
 
 import { extractDriveFileId } from "../../Components/ImageProxyRouterFunction/funtion.js";
 
 const LearnerProfile = () => {
   const navigate = useNavigate();
+    const {role, user,setUser,setRole,clearAuthState} =  useRole();
+
   const [learner, setLearner] = useState(null);
   const [loading, setLoading] = useState(true);
-
-  const token = localStorage.getItem("token");
-  const decoded = token ? jwtDecode(token) : null;
-  const profileId = decoded?.user_id;
+  const profileId = user?.user_id;
 
   useEffect(() => {
     const fetchLearner = async () => {
       try {
-        const token = localStorage.getItem("token");
+        const token =user;
         if (!token) {
           alert("Token is missing");
           setLoading(false);
@@ -32,10 +32,7 @@ const LearnerProfile = () => {
 
         const { data } = await axios.get(
           `${URL}/api/user/learner/${profileId}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
+          {withCredentials: true,
           }
         );
         setLearner(data);

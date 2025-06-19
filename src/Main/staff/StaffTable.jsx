@@ -4,9 +4,12 @@ import { URL } from "../../App";
 import { useNavigate, useLocation } from "react-router-dom";
 import Pagination from "../../Components/Pagination";
 import { extractDriveFileId } from "../../Components/ImageProxyRouterFunction/funtion.js";
+import { useRole } from "../../Components/AuthContext/AuthContext";
 
 const StaffTable = () => {
   const navigate = useNavigate();
+        const {role, user,setUser,setRole,clearAuthState} =  useRole();
+
   const location = useLocation();
   const [staff, setStaff] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -67,7 +70,7 @@ const StaffTable = () => {
       try {
         setLoading(true);
         setError(null);
-        const token = localStorage.getItem("token");
+     
 
         const params = {};
         if (searchQuery.trim()) params.search = searchQuery;
@@ -76,10 +79,7 @@ const StaffTable = () => {
         if (limit) params.limit = limit;
 
         const response = await axios.get(`${URL}/api/staff`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
+          withCredentials: true,
           params,
           signal: searchQuery.trim() ? controller.signal : undefined,
         });
@@ -100,8 +100,8 @@ const StaffTable = () => {
               error.response.data.message === "Invalid token")
           ) {
             setTimeout(() => {
-              localStorage.clear();
-              navigate("/");
+             clearAuthState();
+              // navigate("/");
             }, 2000);
           }
         }

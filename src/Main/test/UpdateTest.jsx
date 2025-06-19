@@ -3,10 +3,13 @@ import { useNavigate, useParams } from "react-router-dom";
 import { URL } from "../../App";
 import axios from "axios";
 import { extractDriveFileId } from "../../Components/ImageProxyRouterFunction/funtion.js";
+import { useRole } from "../../Components/AuthContext/AuthContext";
 
 const UpdateTest = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+        const {role, user,setUser,setRole,clearAuthState} =  useRole();
+
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedTest, setSelectedTest] = useState("");
   const [testDate, setTestDate] = useState("");
@@ -22,14 +25,23 @@ const UpdateTest = () => {
   useEffect(() => {
     const fetchLearners = async () => {
       try {
-        const token = localStorage.getItem("token");
-        const response = await fetch(`${URL}/api/user/learners`, {
-          headers: { Authorization: `Bearer ${token}` },
+        const response = await axios.get(`${URL}/api/user/learners`, {
+          withCredentials: true
         });
         const data = await response.json();
         setLearners(data.learners || []);
       } catch (error) {
-        // console.error("Error fetching learners:", error.message);
+      //  setError(error.message);
+          if (
+            error.response &&
+            (error.response.status === 401 ||
+              error.response.data.message === "Invalid token")
+          ) {
+            setTimeout(() => {
+             clearAuthState();
+              // navigate("/");
+            }, 2000);
+          }
       }
     };
     fetchLearners();

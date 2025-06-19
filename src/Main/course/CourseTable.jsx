@@ -71,10 +71,7 @@ const CourseTable = () => {
         queryParams.set("limit", query.limit);
 
         const response = await axios.get(`${URL}/api/courses?${queryParams.toString()}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Cache-Control": "no-cache",
-          },
+         withCredentials: true,
           signal,
         });
 

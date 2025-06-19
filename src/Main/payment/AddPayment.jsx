@@ -3,8 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { URL } from "../../App";
 import axios from "axios";
 import { extractDriveFileId } from "../../Components/ImageProxyRouterFunction/funtion.js";
+import { useRole } from "../../Components/AuthContext/AuthContext";
 
 const AddPayment = () => {
+      const {role, user,setUser,setRole,clearAuthState} =  useRole();
+
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [learners, setLearners] = useState([]);
@@ -20,10 +23,9 @@ const AddPayment = () => {
   useEffect(() => {
     const fetchLearners = async () => {
       try {
-        const token = localStorage.getItem("token");
-        const response = await fetch(`${URL}/api/user/learners`, {
-          method: "GET",
-          headers: { Authorization: `Bearer ${token}` },
+       
+        const response = await axios.get(`${URL}/api/user/learners`, {
+        withCredentials: true,
         });
 
         if (!response.ok) throw new Error("Failed to fetch learners");
@@ -57,7 +59,6 @@ const AddPayment = () => {
 
     if (!validateForm()) return;
 
-    const token = localStorage.getItem("token");
     const paymentData = {
       learnerId: learners.find(
         (learner) => learner.fullName === selectedLearner
@@ -69,7 +70,7 @@ const AddPayment = () => {
 
     try {
       await axios.post(`${URL}/api/payments`, paymentData, {
-        headers: { Authorization: `Bearer ${token}` },
+        withCredentials: true,
       });
 
       setToastOpen(true);
@@ -87,7 +88,7 @@ const AddPayment = () => {
             error.response.data.message === "Invalid token")
         ) {
           return setTimeout(() => {
-            window.localStorage.clear();
+            clearAuthState();
             navigate("/");
           }, 2000);
         }

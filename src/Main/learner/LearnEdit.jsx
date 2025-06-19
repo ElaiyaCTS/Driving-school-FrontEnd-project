@@ -3,9 +3,12 @@ import { URL as BURL } from "../../App";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { extractDriveFileId } from "../../Components/ImageProxyRouterFunction/funtion.js";
+import { useRole } from "../../Components/AuthContext/AuthContext";
 
 const LearEdit = () => {
   const navigate = useNavigate();
+    const {role, user,setUser,setRole,clearAuthState} =  useRole();
+
   const { id, admissionNumber } = useParams();
   const [learner, setLearner] = useState({
     fullName: "",
@@ -52,10 +55,9 @@ const LearEdit = () => {
   };
 
   const fetchLearner = async () => {
-    const token = localStorage.getItem("token");
     try {
       const response = await axios.get(`${BURL}/api/admin/learner/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
+        withCredentials: true,
       });
 
       if (response.data) {

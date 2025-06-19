@@ -9,7 +9,7 @@ import { useRole } from "./AuthContext/AuthContext"; // adjust path as needed
 
 function Navbar() {
   const {role, user,setUser,setRole,clearAuthState} =  useRole();
-console.log(user);
+// console.log(user);
 
   const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState({ Name: null, photo: null });

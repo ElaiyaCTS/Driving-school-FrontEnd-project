@@ -5,9 +5,12 @@ import { useNavigate, useParams } from "react-router-dom";
 import Pagination from "../../Components/Pagination";
 import moment from "moment";
 import { FaSyncAlt } from "react-icons/fa";
+import { useRole } from "../../Components/AuthContext/AuthContext";
 
 const SinglePayment = () => {
   const navigate = useNavigate();
+        const {role, user,setUser,setRole,clearAuthState} =  useRole();
+
   const { id } = useParams();
   const [payments, setPayments] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -49,7 +52,7 @@ const SinglePayment = () => {
         const response = await axios.get(
           `${URL}/api/payments/${id}?${queryParams}`,
           {
-            headers: { Authorization: `Bearer ${token}` },
+           withCredentials: true,
             signal: controller.signal,
           }
         );
@@ -64,7 +67,7 @@ const SinglePayment = () => {
             error.response.data.message === "Invalid token")
         ) {
           setTimeout(() => {
-            localStorage.clear();
+            clearAuthState();
             navigate("/");
           }, 2000);
         }

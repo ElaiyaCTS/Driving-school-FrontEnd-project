@@ -3,10 +3,12 @@ import { useNavigate, useParams } from "react-router-dom";
 import { URL as BURL } from "../../App";
 import axios from "axios";
 import { extractDriveFileId } from "../../Components/ImageProxyRouterFunction/funtion.js";
+import { useRole } from "../../Components/AuthContext/AuthContext";
 
 const StaffEdit = () => {
   const navigate = useNavigate();
   const { id } = useParams();
+      const {role, user,setUser,setRole,clearAuthState} =  useRole();
 
   const [newStaff, setNewStaff] = useState({
     fullName: "",
@@ -79,7 +81,6 @@ const StaffEdit = () => {
   const handleUpdateSubmit = async (e) => {
     e.preventDefault();
 
-    const token = localStorage.getItem("token");
     const formData = new FormData();
 
     Object.keys(newStaff).forEach((key) => {
@@ -94,10 +95,7 @@ const StaffEdit = () => {
 
     try {
       await axios.put(`${BURL}/api/admin/staff/${id}`, formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-          Authorization: `Bearer ${token}`,
-        },
+      withCredentials: true,
       });
 
       setToastOpen(true);
@@ -115,8 +113,7 @@ const StaffEdit = () => {
             error.response.data.message === "Invalid token")
         ) {
           return setTimeout(() => {
-            window.localStorage.clear();
-            navigate("/");
+           clearAuthState()
           }, 2000);
         }
       }

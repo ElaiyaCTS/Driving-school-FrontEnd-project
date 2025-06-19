@@ -5,10 +5,13 @@ import axios from "axios";
 import moment from "moment";
 import Pagination from "../../Components/Pagination";
 import { extractDriveFileId } from "../../Components/ImageProxyRouterFunction/funtion.js";
+import { useRole } from "../../Components/AuthContext/AuthContext";
 
 const TestTable = () => {
   const navigate = useNavigate();
   const location = useLocation();
+        const {role, user,setUser,setRole,clearAuthState} =  useRole();
+
   const [tests, setTests] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
@@ -80,11 +83,21 @@ const TestTable = () => {
         limit,
       };
 
-      const response = await axios.get(`${URL}/api/tests`, { params });
+      const response = await axios.get(`${URL}/api/tests`, { params,withCredentials: true });
       setTests(response.data.tests || []);
       setTotalPages(response.data.totalPages || 1);
     } catch (error) {
-      console.error("Error fetching tests:", error);
+      // setError(error.message);
+          if (
+            error.response &&
+            (error.response.status === 401 ||
+              error.response.data.message === "Invalid token")
+          ) {
+            setTimeout(() => {
+             clearAuthState();
+              // navigate("/");
+            }, 2000);
+          }
     } finally {
       setLoading(false);
     }

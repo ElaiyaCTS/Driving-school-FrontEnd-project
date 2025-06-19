@@ -127,9 +127,7 @@ useEffect(() => {
             search: searchQuery,
             status: selectedStatus,
           },
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          withCredentials: true,
           signal: searchQuery.trim() ? controller.signal : undefined,
         });
 

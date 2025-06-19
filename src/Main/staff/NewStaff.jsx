@@ -2,9 +2,12 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { URL as BURL } from "../../App";
 import axios from "axios";
+import { useRole } from "../../Components/AuthContext/AuthContext";
 
 const NewStaffr = () => {
   const navigate = useNavigate();
+        const {role, user,setUser,setRole,clearAuthState} =  useRole();
+
   const [newStaff, setNewStaff] = useState({
     fullName: "",
     fathersName: "",
@@ -101,10 +104,7 @@ const NewStaffr = () => {
 
     try {
       await axios.post(`${BURL}/api/admin/staff/create`, formData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "multipart/form-data",
-        },
+        withCredentials: true,
       });
 
       setToastOpen(true);
@@ -121,7 +121,7 @@ const NewStaffr = () => {
             error.response.data.message === "Invalid token")
         ) {
           return setTimeout(() => {
-            window.localStorage.clear();
+            clearAuthState();
             navigate("/");
           }, 2000);
         }

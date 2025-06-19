@@ -4,11 +4,12 @@ import { jwtDecode } from "jwt-decode";
 import { useNavigate } from "react-router-dom";
 import { URL } from "../../../App";
 import { extractDriveFileId } from "../../../Components/ImageProxyRouterFunction/funtion.js";
+import {useRole } from "../../../Components/AuthContext/AuthContext"
 
 const InsMarkAtt = () => {
-  const token = localStorage.getItem("token");
+ const {role, user,setUser,setRole,clearAuthState} =  useRole();
   const navigate = useNavigate();
-
+  
   const [learners, setLearners] = useState([]);
   const [assignedCourses, setAssignedCourses] = useState([]);
   const [selectedLearner, setSelectedLearner] = useState("");
@@ -32,12 +33,12 @@ const InsMarkAtt = () => {
   const [toastOpen, setToastOpen] = useState(false);
   const [isCourseDropdownOpen, setIsCourseDropdownOpen] = useState(false);
   const [isClassDropdownOpen, setIsClassDropdownOpen] = useState(false);
-
+  
   useEffect(() => {
     const fetchLearners = async () => {
       try {
         const res = await axios.get(`${URL}/api/user/learners`, {
-          headers: { Authorization: `Bearer ${token}` },
+          withCredentials: true,
         });
         setLearners(res.data.learners);
       } catch (err) {
@@ -45,19 +46,18 @@ const InsMarkAtt = () => {
       }
     };
     const fetchCourseTypes = async () => {
-      const token = localStorage.getItem("token");
-
+     
       let id;
-      if (token) {
-        const decodedToken = jwtDecode(token);
-        id = decodedToken.user_id;
+      if (user) {
+       
+        id = user.user_id;
       } else {
         // console.error("No token found");
       }
 
       try {
         const res = await axios.get(`${URL}/api/course-assigned/${id}`, {
-          headers: { Authorization: `Bearer ${token}` },
+          withCredentials: true,
         });
         setAssignedCourses(res.data.assignments);
       } catch (err) {
@@ -67,7 +67,7 @@ const InsMarkAtt = () => {
 
     fetchLearners();
     fetchCourseTypes();
-  }, [token]);
+  }, [user]);
 
   const handleLearnerChange = async (learnerId) => {
     const selected = learners.find((l) => l._id === learnerId);
@@ -82,7 +82,7 @@ const InsMarkAtt = () => {
         const res = await axios.get(
           `${URL}/api/course-assigned/${learnerId}`,
           {
-            headers: { Authorization: `Bearer ${token}` },
+           withCredentials: true,
           }
         );
         const assignments = res.data.assignments;
@@ -194,13 +194,13 @@ const InsMarkAtt = () => {
 
   return (
     <div className="p-4">
-      <h2 className="sm:text-3xl md:text-2xl font-semibold mb-4">
+      <h2 className="mb-4 font-semibold sm:text-3xl md:text-2xl">
         Mark Attendance
       </h2>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-        <div className="flex flex-col lg:flex-row gap-6">
-          <div className="w-full lg:w-3/4 flex flex-col gap-4">
+        <div className="flex flex-col gap-6 lg:flex-row">
+          <div className="flex flex-col w-full gap-4 lg:w-3/4">
             <div className="relative w-full">
               <label
                 className={`
@@ -230,7 +230,7 @@ const InsMarkAtt = () => {
               </button>
 
               {isLearnerOpen && (
-                <div className="absolute z-50 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg">
+                <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg">
                   <input
                     type="text"
                     placeholder="Search..."
@@ -238,7 +238,7 @@ const InsMarkAtt = () => {
                     value={searchLearner}
                     onChange={(e) => setSearchLearner(e.target.value)}
                   />
-                  <div className="max-h-60 overflow-y-auto">
+                  <div className="overflow-y-auto max-h-60">
                     {filteredLearners.length > 0 ? (
                       filteredLearners.map((learner) => (
                         <button
@@ -248,7 +248,7 @@ const InsMarkAtt = () => {
                             handleLearnerChange(learner._id);
                             setIsLearnerOpen(false);
                           }}
-                          className="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm text-gray-700"
+                          className="w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
                         >
                           {learner.fullName}
                         </button>
@@ -261,17 +261,17 @@ const InsMarkAtt = () => {
               )}
             </div>
             {courseError && (
-              <p className="text-sm text-red-500 mt-1">{courseError}</p>
+              <p className="mt-1 text-sm text-red-500">{courseError}</p>
             )}
             {selectedLearnerDetails && (
-              <div className="block lg:hidden w-full border p-4 rounded-md">
+              <div className="block w-full p-4 border rounded-md lg:hidden">
                 <div className="flex flex-col items-center gap-2">
                   <img
                     src={`${URL}/api/image-proxy/${extractDriveFileId(
                       selectedLearnerDetails.photo
                     )}`}
                     alt={selectedLearnerDetails.fullName}
-                    className="w-14 h-14 rounded-full border"
+                    className="border rounded-full w-14 h-14"
                   />
                   <p className="text-sm font-semibold">
                     {selectedLearnerDetails.fullName}
@@ -315,8 +315,8 @@ const InsMarkAtt = () => {
               </button>
 
               {isCourseDropdownOpen && (
-                <div className="absolute z-50 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg">
-                  <div className="max-h-60 overflow-y-auto">
+                <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg">
+                  <div className="overflow-y-auto max-h-60">
                     {Course.length > 0 ? (
                       Course.map((assignment) => (
                         <button
@@ -333,7 +333,7 @@ const InsMarkAtt = () => {
                               ? false
                               : true
                           }
-                          className="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm text-gray-700 disabled:text-gray-400 disabled:cursor-not-allowed"
+                          className="w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
                         >
                           {assignment.course.courseName}
                         </button>
@@ -346,7 +346,7 @@ const InsMarkAtt = () => {
               )}
 
               {errors.selectedAssignedCourseId && (
-                <p className="text-red-500 text-sm mt-1">
+                <p className="mt-1 text-sm text-red-500">
                   {errors.selectedAssignedCourseId}
                 </p>
               )}
@@ -382,8 +382,8 @@ const InsMarkAtt = () => {
               </button>
 
               {isClassDropdownOpen && (
-                <div className="absolute z-50 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg">
-                  <div className="max-h-60 overflow-y-auto">
+                <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg">
+                  <div className="overflow-y-auto max-h-60">
                     {["Theory", "Practical"].map((type) => (
                       <button
                         key={type}
@@ -392,7 +392,7 @@ const InsMarkAtt = () => {
                           setClassType(type);
                           setIsClassDropdownOpen(false);
                         }}
-                        className="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm text-gray-700"
+                        className="w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
                       >
                         {type}
                       </button>
@@ -402,7 +402,7 @@ const InsMarkAtt = () => {
               )}
 
               {errors.classType && (
-                <p className="text-red-500 text-sm mt-1">{errors.classType}</p>
+                <p className="mt-1 text-sm text-red-500">{errors.classType}</p>
               )}
             </div>
 
@@ -422,7 +422,7 @@ const InsMarkAtt = () => {
                 Description
               </label>
               {errors.description && (
-                <p className="text-red-500 text-sm mt-1">
+                <p className="mt-1 text-sm text-red-500">
                   {errors.description}
                 </p>
               )}
@@ -448,7 +448,7 @@ const InsMarkAtt = () => {
                 Date
               </label>
               {errors.date && (
-                <p className="text-red-500 text-sm mt-1">{errors.date}</p>
+                <p className="mt-1 text-sm text-red-500">{errors.date}</p>
               )}
             </div>
 
@@ -470,7 +470,7 @@ const InsMarkAtt = () => {
                   Check-In Time
                 </label>
                 {errors.checkIn && (
-                  <p className="text-red-500 text-sm mt-1">{errors.checkIn}</p>
+                  <p className="mt-1 text-sm text-red-500">{errors.checkIn}</p>
                 )}
               </div>
               <div className="relative w-full">
@@ -490,7 +490,7 @@ const InsMarkAtt = () => {
                   Check-In Time
                 </label>
                 {errors.checkOut && (
-                  <p className="text-red-500 text-sm mt-1">{errors.checkOut}</p>
+                  <p className="mt-1 text-sm text-red-500">{errors.checkOut}</p>
                 )}
               </div>
             </div>
@@ -559,16 +559,16 @@ const InsMarkAtt = () => {
             </div>
           </div>
 
-          <div className="hidden lg:block w-full lg:w-1/4">
+          <div className="hidden w-full lg:block lg:w-1/4">
             {selectedLearnerDetails && (
-              <div className="w-full border p-4 rounded-md">
+              <div className="w-full p-4 border rounded-md">
                 <div className="flex flex-col items-center gap-2">
                   <img
                     src={`${URL}/api/image-proxy/${extractDriveFileId(
                       selectedLearnerDetails.photo
                     )}`}
                     alt={selectedLearnerDetails.fullName}
-                    className="w-16 h-16 rounded-full border"
+                    className="w-16 h-16 border rounded-full"
                   />
                   <p className="text-sm font-semibold">
                     {selectedLearnerDetails.fullName}
@@ -582,17 +582,17 @@ const InsMarkAtt = () => {
           </div>
         </div>
 
-       <div className="flex flex-col md:flex-row md:justify-end space-y-4 md:space-y-0 md:space-x-4 mt-6">
+       <div className="flex flex-col mt-6 space-y-4 md:flex-row md:justify-end md:space-y-0 md:space-x-4">
           <button
             type="button"
             onClick={() => navigate(-1)}
-            className="bg-gray-600 text-white px-6 py-2 rounded-md hover:bg-gray-800"
+            className="px-6 py-2 text-white bg-gray-600 rounded-md hover:bg-gray-800"
           >
             Back
           </button>
           <button
             type="submit"
-            className="bg-blue-600 text-white px-6 py-3 rounded-md"
+            className="px-6 py-3 text-white bg-blue-600 rounded-md"
           >
             Submit
           </button>
@@ -602,10 +602,10 @@ const InsMarkAtt = () => {
       {toastOpen && (
         <div
           id="toast-success"
-          className="fixed top-20 right-5 flex items-center justify-center w-full max-w-xs p-4 text-white bg-blue-700 rounded-md shadow-md"
+          className="fixed flex items-center justify-center w-full max-w-xs p-4 text-white bg-blue-700 rounded-md shadow-md top-20 right-5"
           role="alert"
         >
-          <div className="inline-flex items-center justify-center shrink-0 w-8 h-8 text-green-700 bg-green-100 rounded-md dark:bg-green-800 dark:text-green-400">
+          <div className="inline-flex items-center justify-center w-8 h-8 text-green-700 bg-green-100 rounded-md shrink-0 dark:bg-green-800 dark:text-green-400">
             <svg
               className="w-5 h-5"
               aria-hidden="true"
@@ -617,7 +617,7 @@ const InsMarkAtt = () => {
             </svg>
             <span className="sr-only">Check icon</span>
           </div>
-          <div className="ms-3 text-sm font-normal">
+          <div className="text-sm font-normal ms-3">
             Attendance marked successfully
           </div>
         </div>
