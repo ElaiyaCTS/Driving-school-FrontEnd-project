@@ -11,8 +11,8 @@ const ProtectedRoute = ({ allowedRoles, children }) => {
   }
 
   if (!role || !allowedRoles.includes(role.toLowerCase())) {
-    // return clearAuthState ();
-   return <Navigate to="/" replace />;
+    return clearAuthState ();
+  //  return <Navigate to="/" replace />;
   }
 
   return children;

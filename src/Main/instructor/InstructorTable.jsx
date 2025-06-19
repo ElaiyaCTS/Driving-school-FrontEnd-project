@@ -101,7 +101,7 @@ const updateURLParams = ({ search, gender, page }) => {
               error.response.data.message === "Invalid token")
           ) {
             setTimeout(() => {
-              localStorage.clear();
+             clearAuthState()
               navigate("/");
             }, 2000);
           }

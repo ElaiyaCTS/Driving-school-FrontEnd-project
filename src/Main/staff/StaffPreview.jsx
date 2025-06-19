@@ -33,7 +33,7 @@ const StaffPreview = () => {
               error.response.data.message === "Invalid token")
           ) {
             return setTimeout(() => {
-              window.localStorage.clear();
+              clearAuthState();
               navigate("/");
             }, 2000);
           }

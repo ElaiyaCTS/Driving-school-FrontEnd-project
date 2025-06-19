@@ -11,6 +11,8 @@ export const RoleProvider = ({ children }) => {
 
  const clearAuthState = async () => {
   try {
+    console.log("run");
+    
     await axios.post(`${import.meta.env.VITE_BACK_URL || ""}/api/admin/logout`, {}, {
       withCredentials: true,
     });

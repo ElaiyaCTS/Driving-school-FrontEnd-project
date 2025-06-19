@@ -11,7 +11,7 @@ import { useRole } from "../../Components/AuthContext/AuthContext";
 const LearnerTable = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { role } = useRole();
+      const {role, user,setUser,setRole,clearAuthState} =  useRole();
 
   const [search, setSearch] = useState("");
   const [selectedGender, setSelectedGender] = useState("");
@@ -123,10 +123,17 @@ const LearnerTable = () => {
         setLearners(response.data.learners || []);
         setTotalPages(response.data.totalPages || 1);
       } catch (err) {
-        if (!axios.isCancel(err)) {
-          setError(err.message || "Error fetching data");
+         if (!axios.isCancel(err)) {
+            setError(err.response.data.message);
+        if (err.response &&(err.response.status === 401 ||err.response.data.message === "Invalid token")) {
+            setTimeout(() => {
+              clearAuthState();
+              // navigate("/");
+            }, 3000);
+          }
         }
-      } finally {
+      }
+      finally {
         setLoading(false);
       }
     };

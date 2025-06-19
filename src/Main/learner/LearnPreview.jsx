@@ -8,11 +8,12 @@ import SinglePayment from "../../Main/payment/SinglePayment";
 import SingleCourseAssign from "../../Main/courseAssigned/SingleCourseAssign";
 import SingleAttendance from "../attendance/learner/SingleAttendance";
 import { extractDriveFileId } from "../../Components/ImageProxyRouterFunction/funtion.js";
-
+import { useRole } from "../../Components/AuthContext/AuthContext"; // adjust path as needed
 const LearnPreview = () => {
   const navigate = useNavigate();
   const { id } = useParams();
 
+  const {role, user,setUser,setRole,clearAuthState} =  useRole();
   const [learner, setLearner] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
@@ -24,15 +25,17 @@ const LearnPreview = () => {
           withCredentials: true,
         });
         setLearner(response.data);
-      } catch (error) {
-        const status = error.response?.status;
-        const message = error.response?.data?.message;
-
-        console.error("Error fetching learner:", message || error.message);
-
-        if (status === 401 || message === "Invalid token") {
-          navigate("/", { replace: true });
+      }catch (err) {
+         if (!axios.isCancel(err)) {
+            // setError(err.response.data.message);
+        if (err.response &&(err.response.status === 401 ||err.response.data.message === "Invalid token")) {
+            setTimeout(() => {
+              // clearAuthState();
+              // navigate("/");
+            }, 3000);
+          }
         }
+      
       } finally {
         setLoading(false);
       }
