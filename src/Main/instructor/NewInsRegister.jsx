@@ -2,9 +2,10 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { URL } from "../../App";
 import axios from "axios";
-
+import { useRole } from "../../Components/AuthContext/AuthContext"; // adjust path as needed
 const NewInsRegister = () => {
   const navigate = useNavigate();
+  const {role, user,setUser,setRole,clearAuthState} =  useRole();
   const [newInstructors, setNewInstructors] = useState({
     fullName: "",
     fathersName: "",
@@ -81,14 +82,8 @@ const NewInsRegister = () => {
 
     setValidationErrors({});
     setLoading(true);
-    const token = localStorage.getItem("token");
 
-    if (!token) {
-      alert("Token is missing Please log in.");
-      setLoading(false);
-      return;
-    }
-
+   
     if (!newInstructors.photo?.file) {
       alert("Please upload a photo.");
       setLoading(false);
@@ -110,10 +105,7 @@ const NewInsRegister = () => {
 
     try {
       await axios.post(`${URL}/api/admin/create-Instructor`, formData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "multipart/form-data",
-        },
+      withCredentials: true,
       });
 
       setToastOpen(true);
@@ -130,8 +122,8 @@ const NewInsRegister = () => {
             error.response.data.message === "Invalid token")
         ) {
           return setTimeout(() => {
-            window.localStorage.clear();
-            navigate("/");
+            clearAuthState();
+            // navigate("/");
           }, 2000);
         }
       }

@@ -5,25 +5,19 @@ import axios from "axios";
 import moment from "moment";
 import SingleInstructorAttendance from "../attendance/instructor/SingleInstrutorAttendance.jsx";
 import {extractDriveFileId} from '../../Components/ImageProxyRouterFunction/funtion.js'
-
+import { useRole } from "../../Components/AuthContext/AuthContext"; // adjust path as needed
 const InsPreview = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const [instructor, setInstructor] = useState(null);
   const [loading, setLoading] = useState(true);
-
+const {role, user,setUser,setRole,clearAuthState} =  useRole();
   useEffect(() => {
     const fetchInstructor = async () => {
       try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          console.error("No token found");
-        }
-
+       
         const { data } = await axios.get(`${URL}/api/user/instructor/${id}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+         withCredentials: true
         });
 
       setInstructor(data);
@@ -36,8 +30,8 @@ const InsPreview = () => {
               error.response.data.message === "Invalid token")
           ) {
             return setTimeout(() => {
-              window.localStorage.clear();
-              navigate("/");
+              clearAuthState();
+              // navigate("/");
             }, 2000);
           }
         }

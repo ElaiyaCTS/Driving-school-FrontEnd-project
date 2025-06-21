@@ -27,12 +27,17 @@ const InsLearnerAddPayment = () => {
         const response = await axios.get(`${URL}/api/user/learners`, {
          withCredentials: true,
         });
-
-        if (!response.ok) throw new Error("Failed to fetch learners");
-        const data = await response.json();
-        setLearners(data.learners);
-      } catch (error) {
-        console.error("Error fetching learners:", error.message);
+        return setLearners(response.data.learners);
+      } catch (err) {
+         if (!axios.isCancel(err)) {
+            // setError(err.response.data.message);
+        if (err.response &&(err.response.status === 401 ||err.response.data.message === "Invalid token")) {
+            setTimeout(() => {
+              clearAuthState();
+              // navigate("/");
+            }, 3000);
+          }
+        }
       }
     };
 

@@ -3,13 +3,11 @@ import { useNavigate, useParams } from "react-router-dom";
 import { URL as BURL } from "../../App";
 import axios from "axios";
 import { extractDriveFileId } from "../../Components/ImageProxyRouterFunction/funtion.js";
-import { useRole } from "../../Components/AuthContext/AuthContext";
-
+import { useRole } from "../../Components/AuthContext/AuthContext"; // adjust path as needed
 const InsEdit = () => {
   const navigate = useNavigate();
   const { id } = useParams();
-  const { clearAuthState } = useRole();
-
+   const {role, user,setUser,setRole,clearAuthState} =  useRole();
   const [newInstructor, setNewInstructor] = useState({
     fullName: "",
     fathersName: "",
@@ -28,28 +26,20 @@ const InsEdit = () => {
   const [toastOpen, setToastOpen] = useState(false);
   const [error, setError] = useState(null);
 
-  const formatDate = (isoDate) => (isoDate ? isoDate.split("T")[0] : "");
-
-  const handleTokenError = (error) => {
-    if (
-      error?.response &&
-      (error.response.status === 401 || error.response.data.message === "Invalid token")
-    ) {
-      setTimeout(() => {
-        clearAuthState();
-        // navigate("/");
-      }, 2000);
-    }
+  const formatDate = (isoDate) => {
+    return isoDate ? isoDate.split("T")[0] : "";
   };
 
   const fetchInstructor = async () => {
+
     try {
       const response = await axios.get(`${BURL}/api/user/instructor/${id}`, {
-        withCredentials: true,
+      withCredentials: true
       });
 
-      const instructor = response.data;
-      if (instructor) {
+      if (response.data) {
+        const instructor = response.data;
+
         setNewInstructor({
           fullName: instructor.fullName || "",
           fathersName: instructor.fathersName || "",
@@ -67,14 +57,23 @@ const InsEdit = () => {
           const driveId = extractDriveFileId(instructor.photo);
           const imageUrl = driveId
             ? `${BURL}/api/image-proxy/${driveId}`
-            : `${instructor.photo}?t=${Date.now()}`;
+            : `${instructor.photo}?t=${new Date().getTime()}`;
           setSelectedFile(imageUrl);
         }
       }
-    } catch (err) {
-      console.error("Error fetching data:", err);
-      setError(err.message);
-      handleTokenError(err);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      setError(error.message);
+      if (
+        error.response &&
+        (error.response.status === 401 ||
+          error.response.data.message === "Invalid token")
+      ) {
+        setTimeout(() => {
+          clearAuthState();
+          // navigate("/");
+        }, 2000);
+      }
     } finally {
       setLoading(false);
     }
@@ -93,6 +92,7 @@ const InsEdit = () => {
     e.preventDefault();
 
     const formData = new FormData();
+
     Object.keys(newInstructor).forEach((key) => {
       if (key !== "photo") {
         formData.append(key, newInstructor[key]);
@@ -111,13 +111,23 @@ const InsEdit = () => {
       setToastOpen(true);
       setTimeout(() => {
         setToastOpen(false);
-        navigate("/admin/instructor/list");
+        navigate(-1);
       }, 2000);
 
       fetchInstructor();
-    } catch (err) {
-      if (err.name !== "AbortError") {
-        handleTokenError(err);
+    } catch (error) {
+      // console.error("Error updating instructor:", error);
+      if (error.name !== "AbortError") {
+        if (
+          error.response &&
+          (error.response.status === 401 ||
+            error.response.data.message === "Invalid token")
+        ) {
+          return setTimeout(() => {
+            clearAuthState();
+            // navigate("/");
+          }, 2000);
+        }
       }
     }
   };
@@ -133,8 +143,9 @@ const InsEdit = () => {
     setSelectedFile(null);
   };
 
-  if (loading) return <p className="py-5 text-lg font-semibold text-center text-blue-600">Loading....</p>;
- return (
+  if (loading) return <p>Loading...</p>;
+
+  return (
     <div className="p-6">
       <h3 className="text-xl font-bold mb-6">Update Instructor Details</h3>
 

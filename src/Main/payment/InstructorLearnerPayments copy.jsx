@@ -1,20 +1,20 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { jwtDecode } from "jwt-decode";
+import { URL } from "../../App";
 import axios from "axios";
 import moment from "moment";
 import Pagination from "../../Components/Pagination";
-import { extractDriveFileId } from "../../Components/ImageProxyRouterFunction/funtion";
+import { extractDriveFileId } from "../../Components/ImageProxyRouterFunction/funtion.js";
 import { useRole } from "../../Components/AuthContext/AuthContext";
-import { URL } from "../../App";
 
 const InstructorLearnerPayments = () => {
   const navigate = useNavigate();
-  const location = useLocation();
-  const { user, clearAuthState } = useRole();
-  const instructorId = user?.user_id;
+    const {role, user,setUser,setRole,clearAuthState} =  useRole();
 
-  const controllerRef = useRef(null);
-  const debounceRef = useRef(null);
+  const location = useLocation();
+  const decoded = user ? user : null;
+  const instructorId = decoded?.user_id;
 
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -27,163 +27,184 @@ const InstructorLearnerPayments = () => {
 
   const itemsPerPage = 10;
 
-  const formatDate = (dateStr) =>
-    dateStr ? new Date(dateStr).toISOString().split("T")[0] : "";
-
-  const updateURLParams = (paramsObj) => {
-    const newParams = new URLSearchParams();
-
-    if (paramsObj.search) newParams.set("search", paramsObj.search);
-    if (paramsObj.paymentMethod) newParams.set("paymentMethod", paramsObj.paymentMethod);
-    if (paramsObj.fromdate) newParams.set("fromdate", formatDate(paramsObj.fromdate));
-    if (paramsObj.todate) newParams.set("todate", formatDate(paramsObj.todate));
-    newParams.set("page", paramsObj.page ? String(paramsObj.page) : "1");
-    newParams.set("limit", String(itemsPerPage));
-
-    const currentParams = new URLSearchParams(location.search);
-    if (newParams.toString() !== currentParams.toString()) {
-      navigate({ search: newParams.toString() }, { replace: true });
-    }
+  const formatDate = (dateStr) => {
+    if (!dateStr) return "";
+    const date = new Date(dateStr);
+    return date.toISOString().split("T")[0];
   };
 
-  const fetchPayments = async () => {
-    if (!instructorId) return;
-
-    if ((fromDate && !toDate) || (!fromDate && toDate) || (fromDate && toDate && new Date(fromDate) > new Date(toDate))) {
-      setPayments([]);
-      return;
-    }
-
-    if (controllerRef.current) controllerRef.current.abort();
-    controllerRef.current = new AbortController();
-
-    setLoading(true);
-    try {
-      const { data } = await axios.get(`${URL}/api/payments/createdBy/${instructorId}`, {
-        params: {
-          search: searchTerm || undefined,
-          paymentMethod: paymentMethod || undefined,
-          fromdate: fromDate || undefined,
-          todate: toDate || undefined,
-          page: currentPage,
-          limit: itemsPerPage,
-        },
-        withCredentials: true,
-        signal: controllerRef.current.signal,
-      });
-
-      setPayments(data.payments || []);
-      setTotalPages(data.totalPages || 1);
-    } catch (error) {
-      if (
-        error?.response?.status === 401 ||
-        error?.response?.data?.message === "Invalid token"
-      ) {
-        clearAuthState();
-        navigate("/");
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Sync from URL on first load
-  useEffect(() => {
+  const updateURLParams = ({
+    search,
+    paymentMethod,
+    fromdate,
+    todate,
+    page,
+  }) => {
     const params = new URLSearchParams(location.search);
 
-    const search = params.get("search") || "";
-    const payment = params.get("paymentMethod") || "";
-    const from = params.get("fromdate") || "";
-    const to = params.get("todate") || "";
-    const page = Number(params.get("page")) || 1;
+    if (search !== undefined) {
+      if (search) {
+        params.set("search", search);
+      } else {
+        params.delete("search");
+      }
+    }
 
-    setSearchTerm(search);
-    setPaymentMethod(payment);
-    setFromDate(from);
-    setToDate(to);
-    setCurrentPage(page);
+    if (paymentMethod !== undefined) {
+      if (paymentMethod) {
+        params.set("paymentMethod", paymentMethod);
+      } else {
+        params.delete("paymentMethod");
+      }
+    }
 
-    // Ensure URL is clean and contains limit
-    updateURLParams({
-      search,
-      paymentMethod: payment,
-      fromdate: from,
-      todate: to,
-      page,
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    if (fromdate !== undefined) {
+      if (fromdate) {
+        params.set("fromdate", formatDate(fromdate));
+      } else {
+        params.delete("fromdate");
+      }
+    }
 
-  // Instant fetch for non-search filters
+    if (todate !== undefined) {
+      if (todate) {
+        params.set("todate", formatDate(todate));
+      } else {
+        params.delete("todate");
+      }
+    }
+
+    if (page !== undefined) {
+      if (page && page > 1) {
+        params.set("page", page);
+      } else {
+        params.delete("page");
+      }
+    }
+
+    navigate({ search: params.toString() });
+  };
+
   useEffect(() => {
-    if (!searchTerm) fetchPayments();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [paymentMethod, fromDate, toDate, currentPage]);
+    const controller = new AbortController();
+    let debounceTimer;
 
-  // Debounced fetch for search
-  useEffect(() => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
+    const fetchPayments = async () => {
+      setLoading(true);
+      try {
+        const response = await axios.get(
+          `${URL}/api/payments/createdBy/${instructorId}`,
+          {
+            params: {
+              search: searchTerm,
+              paymentMethod: paymentMethod,
+              fromdate: formatDate(fromDate),
+              todate: formatDate(toDate),
+              page: currentPage,
+              limit: itemsPerPage,
+            },
+            withCredentials: true,
+            signal: controller.signal,
+          }
+        );
+
+        setPayments(response.data.payments || []);
+        setTotalPages(response.data.totalPages || 1);
+      } catch (error) {
+        if (
+          error.response &&
+          (error.response.status === 401 ||
+            error.response.data.message === "Invalid token")
+        ) {
+          setTimeout(() => {
+            clearAuthState();
+            navigate("/");
+          }, 2000);
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (searchTerm) {
+      debounceTimer = setTimeout(() => {
+        fetchPayments();
+      }, 2000);
+    } else {
       fetchPayments();
-    }, 2000);
+    }
 
     return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
+      clearTimeout(debounceTimer);
+      controller.abort();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchTerm]);
+  }, [searchTerm, paymentMethod, fromDate, toDate, currentPage]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const searchFromURL = params.get("search") || "";
+    const paymentMethodFromURL = params.get("paymentMethod") || "";
+    const fromDateFromURL = params.get("fromdate") || "";
+    const toDateFromURL = params.get("todate") || "";
+    const pageFromURL = parseInt(params.get("page")) || 1;
+
+    setSearchTerm(searchFromURL);
+    setPaymentMethod(paymentMethodFromURL);
+    setFromDate(fromDateFromURL);
+    setToDate(toDateFromURL);
+    setCurrentPage(pageFromURL);
+  }, [location.search]);
 
   const handleSearchChange = (e) => {
-    const val = e.target.value;
-    setSearchTerm(val);
-    setCurrentPage(1);
+    const value = e.target.value;
+    setSearchTerm(value);
     updateURLParams({
-      search: val,
+      search: value,
       paymentMethod,
       fromdate: fromDate,
       todate: toDate,
       page: 1,
     });
+    setCurrentPage(1);
   };
 
   const handlePaymentMethodChange = (e) => {
-    const val = e.target.value;
-    setPaymentMethod(val);
-    setCurrentPage(1);
+    const value = e.target.value;
+    setPaymentMethod(value);
     updateURLParams({
       search: searchTerm,
-      paymentMethod: val,
+      paymentMethod: value,
       fromdate: fromDate,
       todate: toDate,
       page: 1,
     });
+    setCurrentPage(1);
   };
 
   const handleFromDateChange = (e) => {
-    const val = e.target.value;
-    setFromDate(val);
-    if (!val) setToDate("");
-    setCurrentPage(1);
+    const value = e.target.value;
+    setFromDate(value);
     updateURLParams({
       search: searchTerm,
       paymentMethod,
-      fromdate: val,
-      todate: "",
+      fromdate: formatDate(value),
+      todate: toDate,
       page: 1,
     });
+    setCurrentPage(1);
   };
 
   const handleToDateChange = (e) => {
-    const val = e.target.value;
-    setToDate(val);
-    setCurrentPage(1);
+    const value = e.target.value;
+    setToDate(value);
     updateURLParams({
       search: searchTerm,
       paymentMethod,
       fromdate: fromDate,
-      todate: val,
+      todate: formatDate(value),
       page: 1,
     });
+    setCurrentPage(1);
   };
 
   const handlePageChange = (page) => {
@@ -221,7 +242,11 @@ const InstructorLearnerPayments = () => {
             strokeWidth="2"
             viewBox="0 0 24 24"
           >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M21 21l-4.35-4.35"
+            />
             <circle cx="10" cy="10" r="7" />
           </svg>
           <input
@@ -236,14 +261,8 @@ const InstructorLearnerPayments = () => {
               className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-600 hover:text-blue-500"
               onClick={() => {
                 setSearchTerm("");
+                updateURLParams({ search: "", fromDate, toDate, page: 1 });
                 setCurrentPage(1);
-                updateURLParams({
-                  search: "",
-                  paymentMethod,
-                  fromdate: fromDate,
-                  todate: toDate,
-                  page: 1,
-                });
               }}
             >
               <svg
@@ -252,7 +271,12 @@ const InstructorLearnerPayments = () => {
                 stroke="currentColor"
                 viewBox="0 0 24 24"
               >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
           )}
@@ -261,7 +285,8 @@ const InstructorLearnerPayments = () => {
         <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3 w-full md:flex-1 md:justify-end">
           <div className="relative w-full sm:w-40">
             <select
-              className="peer block w-full text-sm text-gray-900 bg-transparent rounded-lg border border-gray-300 px-3 py-2"
+              id="floating_payment"
+              className="peer block w-full text-sm text-gray-900 bg-transparent rounded-lg border border-gray-300 focus:outline-none focus:ring-0 focus:border-blue-600 px-3 py-2"
               value={paymentMethod}
               onChange={handlePaymentMethodChange}
             >
@@ -269,7 +294,12 @@ const InstructorLearnerPayments = () => {
               <option value="UPI">UPI</option>
               <option value="Cash">Cash</option>
             </select>
-            <label className="absolute text-xs left-3 top-[-8px] bg-white px-1 text-gray-500 peer-focus:text-blue-600">
+            <label
+              htmlFor="floating_payment"
+              className={`absolute text-xs left-3 top-[-8px] bg-white px-1 text-gray-500 peer-focus:text-blue-600 ${
+                paymentMethod ? "text-blue-600" : ""
+              }`}
+            >
               Payment
             </label>
           </div>
@@ -279,6 +309,7 @@ const InstructorLearnerPayments = () => {
               <input
                 type="date"
                 value={fromDate}
+                onFocus={(e) => (e.nativeEvent.target.defaultValue = "")}
                 onChange={handleFromDateChange}
                 className="peer border border-gray-300 text-gray-900 text-sm rounded-lg px-3 py-2 w-full"
               />
@@ -290,10 +321,9 @@ const InstructorLearnerPayments = () => {
               <input
                 type="date"
                 value={toDate}
+                onFocus={(e) => (e.nativeEvent.target.defaultValue = "")}
                 onChange={handleToDateChange}
-                disabled={!fromDate}
-                min={fromDate}
-                className="peer border border-gray-300 text-gray-900 text-sm rounded-lg px-3 py-2 w-full disabled:bg-gray-100"
+                className="peer border border-gray-300 text-gray-900 text-sm rounded-lg px-3 py-2 w-full"
               />
               <label className="absolute left-3 top-[-8px] text-xs bg-white px-1 text-gray-500">
                 To
@@ -304,7 +334,9 @@ const InstructorLearnerPayments = () => {
       </div>
 
       {loading ? (
-        <div className="text-center font-semibold text-blue-600">Loading...</div>
+        <div className="text-center font-semibold text-blue-600">
+          Loading...
+        </div>
       ) : (
         <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
           <table className="w-full text-sm text-left text-gray-500">
@@ -328,13 +360,17 @@ const InstructorLearnerPayments = () => {
                     </td>
                     <td className="px-6 py-4">
                       <img
-                        src={`${URL}/api/image-proxy/${extractDriveFileId(payment.learner?.photo)}`}
+                        src={`${URL}/api/image-proxy/${extractDriveFileId(
+                          payment.learner?.photo
+                        )}`}
                         alt={payment.learner?.fullName}
                         className="w-10 h-10 rounded-full object-cover"
                       />
                     </td>
                     <td className="px-6 py-4">{payment.learner?.fullName}</td>
-                    <td className="px-6 py-4">{payment.learner?.admissionNumber}</td>
+                    <td className="px-6 py-4">
+                      {payment.learner?.admissionNumber}
+                    </td>
                     <td className="px-6 py-4">{payment.paymentMethod}</td>
                     <td className="px-6 py-4">
                       {moment(payment.date).format("DD-MM-YYYY")}
@@ -344,7 +380,10 @@ const InstructorLearnerPayments = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="7" className="px-6 py-8 text-center text-red-600">
+                  <td
+                    colSpan="7"
+                    className="px-6 py-8 text-center text-red-600"
+                  >
                     Payments not found
                   </td>
                 </tr>

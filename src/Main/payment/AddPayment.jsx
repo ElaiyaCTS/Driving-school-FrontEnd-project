@@ -28,9 +28,9 @@ const AddPayment = () => {
         withCredentials: true,
         });
 
-        if (!response.ok) throw new Error("Failed to fetch learners");
-        const data = await response.json();
-        setLearners(data.learners);
+       console.log(response.data);
+       
+       return setLearners(response.data.learners);
       } catch (error) {
         console.error("Error fetching learners:", error.message);
       }

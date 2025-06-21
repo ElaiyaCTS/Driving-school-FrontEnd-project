@@ -6,30 +6,23 @@ import InstructorDashAttendance from "../attendance/instructor/InstructorDashAtt
 import moment from "moment";
 import { extractDriveFileId } from "../../Components/ImageProxyRouterFunction/funtion.js";
 import { jwtDecode } from "jwt-decode";
-
+import { useRole } from "../../Components/AuthContext/AuthContext"; // adjust path as needed
 const InstructorProfile = () => {
   const navigate = useNavigate();
   const [instructor, setInstructor] = useState(null);
   const [loading, setLoading] = useState(true);
-
-  const token = localStorage.getItem("token");
-  const decoded = token ? jwtDecode(token) : null;
+const {role, user,setUser,setRole,clearAuthState} =  useRole();
+  const decoded = user ?user : null;
   const InstructorId = decoded?.user_id;
 
   useEffect(() => {
     const fetchInstructor = async () => {
       try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          console.error("No token found");
-        }
-
+     
         const { data } = await axios.get(
           `${URL}/api/user/instructor/${InstructorId}`,
           {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
+            withCredentials: true,
           }
         );
 
@@ -43,8 +36,8 @@ const InstructorProfile = () => {
               error.response.data.message === "Invalid token")
           ) {
             return setTimeout(() => {
-              window.localStorage.clear();
-              navigate("/");
+              clearAuthState();
+              // navigate("/");
             }, 2000);
           }
         }

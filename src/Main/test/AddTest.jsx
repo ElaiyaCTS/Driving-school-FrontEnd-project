@@ -29,8 +29,7 @@ const AddTest = () => {
          withCredentials: true,
         });
 
-        const data = await response.json();
-        setLearners(data.learners);
+        setLearners(response.data.learners);
       } catch (error) {
       setErrors(error.message);
           if (
