@@ -27,7 +27,7 @@ const {role, user,setUser,setRole,clearAuthState} =  useRole();
           if (
             error.response &&
             (error.response.status === 401 ||
-              error.response.data.message === "Invalid token")
+              error.response.data.message === "Credential Invalid or Expired Please Login Again")
           ) {
             return setTimeout(() => {
               clearAuthState();

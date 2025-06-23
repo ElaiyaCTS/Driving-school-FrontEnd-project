@@ -28,7 +28,7 @@ const LearnPreview = () => {
       }catch (err) {
          if (!axios.isCancel(err)) {
             // setError(err.response.data.message);
-        if (err.response &&(err.response.status === 401 ||err.response.data.message === "Invalid token")) {
+        if (err.response &&(err.response.status === 401 ||err.response.data.message === "Credential Invalid or Expired Please Login Again")) {
             setTimeout(() => {
               // clearAuthState();
               // navigate("/");

@@ -36,7 +36,7 @@ useEffect(() => {
       setUser(decoded);
       setRole(decoded.role.toLowerCase());
     } catch (error) {
-      // Invalid token
+      // Credential Invalid or Expired Please Login Again
       localStorage.removeItem("token");
       setUser(null);
       setRole(null);

@@ -96,7 +96,7 @@ const MarkIns = () => {
       if (
         error.response &&
         error.response.data &&
-        error.response.data.message === "Invalid token"
+        error.response.data.message === "Credential Invalid or Expired Please Login Again"
       ) {
         setTimeout(() => {
           localStorage.clear();

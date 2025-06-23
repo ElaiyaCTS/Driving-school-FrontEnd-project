@@ -146,7 +146,7 @@ const LearEdit = () => {
       fetchLearner();
     } catch (error) {
       // console.error("Error updating learner:", error);
-      if (error.response?.data?.message === "Invalid token") {
+      if (error.response?.data?.message === "Credential Invalid or Expired Please Login Again") {
         setTimeout(() => {
           window.localStorage.clear();
           navigate("/");

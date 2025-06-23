@@ -31,7 +31,7 @@ const InsLearnerAddPayment = () => {
       } catch (err) {
          if (!axios.isCancel(err)) {
             // setError(err.response.data.message);
-        if (err.response &&(err.response.status === 401 ||err.response.data.message === "Invalid token")) {
+        if (err.response &&(err.response.status === 401 ||err.response.data.message === "Credential Invalid or Expired Please Login Again")) {
             setTimeout(() => {
               clearAuthState();
               // navigate("/");
@@ -91,7 +91,7 @@ const InsLearnerAddPayment = () => {
         if (
           error.response &&
           (error.response.status === 401 ||
-            error.response.data.message === "Invalid token")
+            error.response.data.message === "Credential Invalid or Expired Please Login Again")
         ) {
           return setTimeout(() => {
             clearAuthState();
