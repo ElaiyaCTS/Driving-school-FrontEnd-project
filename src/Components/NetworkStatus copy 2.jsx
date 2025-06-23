@@ -1,23 +1,19 @@
-import { useEffect, useState, useRef } from "react";
+// Components/NetworkStatus.jsx
+import { useEffect, useState } from "react";
 
 function NetworkStatus() {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [showOnlineMsg, setShowOnlineMsg] = useState(false);
-  const wasActuallyOffline = useRef(false); // tracks real offline events
 
   useEffect(() => {
     const handleOnline = () => {
       setIsOnline(true);
-      if (wasActuallyOffline.current) {
-        setShowOnlineMsg(true);
-        setTimeout(() => setShowOnlineMsg(false), 3000);
-        wasActuallyOffline.current = false;
-      }
+      setShowOnlineMsg(true);
+      setTimeout(() => setShowOnlineMsg(false), 3000);
     };
 
     const handleOffline = () => {
       setIsOnline(false);
-      wasActuallyOffline.current = true;
     };
 
     window.addEventListener("online", handleOnline);
@@ -32,13 +28,13 @@ function NetworkStatus() {
   return (
     <>
       {!isOnline && (
-        <div className="fixed bottom-0 w-full bg-red-600 text-white text-center py-2 z-[9999]">
-          🚫 No internet connection
+        <div className="fixed top-0 w-full bg-red-600 text-white text-center py-2 z-[9999]">
+           🚫 Could not connect to internet
         </div>
       )}
       {isOnline && showOnlineMsg && (
-        <div className="fixed bottom-0 w-full bg-green-600 text-white text-center py-2 z-[9999]">
-          ✅ We are back online
+        <div className="fixed top-0 w-full bg-green-600 text-white text-center py-2 z-[9999]">
+           ✅ You're back online
         </div>
       )}
     </>
