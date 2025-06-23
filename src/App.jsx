@@ -87,7 +87,7 @@ function App() {
       <RoleProvider>
          {/* NetworkStatus If user loses internet → 🚫 No internet connection or
          When internet comes back → ✅ Back online*/}
-         <NetworkStatus />
+         {/* <NetworkStatus /> */}
          {/* Public Routes */}
        <Routes>
         <Route path="/" element={<LoginPage />} />
