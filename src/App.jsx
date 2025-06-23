@@ -70,7 +70,7 @@ import SplashScreen from "./Components/SplashScreen";
 import Page404 from "./Components/Page404";
 import ProtectedRoute from "./Components/ProtectedRoute";
 import { RoleProvider  } from './Components/AuthContext/AuthContext.jsx';
-
+import NetworkStatus from "./Components/NetworkStatus"; // Add this import
 export const URL = import.meta.env.VITE_BACK_URL;
 
 function App() {
@@ -85,6 +85,9 @@ function App() {
   ) : (
     <Router>
       <RoleProvider>
+         {/* NetworkStatus If user loses internet → 🚫 No internet connection or
+         When internet comes back → ✅ Back online*/}
+         <NetworkStatus />
          {/* Public Routes */}
        <Routes>
         <Route path="/" element={<LoginPage />} />
