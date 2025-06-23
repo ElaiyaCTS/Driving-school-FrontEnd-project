@@ -29,12 +29,12 @@ function NetworkStatus() {
     <>
       {!isOnline && (
         <div className="fixed top-0 w-full bg-red-600 text-white text-center py-2 z-[9999]">
-          🚫 No internet connection
+           🚫 Could not connect to internet
         </div>
       )}
       {isOnline && showOnlineMsg && (
         <div className="fixed top-0 w-full bg-green-600 text-white text-center py-2 z-[9999]">
-          ✅ We are back online
+           ✅ You're back online
         </div>
       )}
     </>
