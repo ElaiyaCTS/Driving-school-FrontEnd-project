@@ -5,9 +5,10 @@ import { URL } from "../../../App";
 import moment from "moment";
 import Pagination from "../../../Components/Pagination";
 import { extractDriveFileId } from "../../../Components/ImageProxyRouterFunction/funtion.js";
-
+import { useRole } from "../../../Components/AuthContext/AuthContext"; // adjust path as needed
 const InsAttTable = () => {
   const navigate = useNavigate();
+  const {role, user,setUser,setRole,clearAuthState} =  useRole();
   const location = useLocation();
   const today = new Date().toISOString().split("T")[0];
 
@@ -113,9 +114,7 @@ const InsAttTable = () => {
             search: searchQuery,
             status: selectedStatus,
           },
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          withCredentials: true,
           signal: searchQuery.trim() ? controller.signal : undefined,
         });
 
@@ -132,8 +131,8 @@ const InsAttTable = () => {
               error.response.data.message === "Credential Invalid or Expired Please Login Again")
           ) {
             setTimeout(() => {
-              window.localStorage.clear();
-              navigate("/");
+              clearAuthState();
+              // navigate("/");
             }, 2000);
           }
         }

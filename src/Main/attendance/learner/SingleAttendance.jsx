@@ -5,8 +5,10 @@ import { useNavigate, useParams } from "react-router-dom";
 import { URL } from "../../../App";
 import Pagination from "../../../Components/Pagination";
 import { FaSyncAlt } from "react-icons/fa";
-
+import { useRole } from "../../../Components/AuthContext/AuthContext";
 const SingleAttendance = () => {
+   const {role, user,setUser,setRole,clearAuthState} =  useRole();
+
   const { id } = useParams();
   const navigate = useNavigate();
   const [attendanceData, setAttendanceData] = useState([]);
@@ -27,7 +29,6 @@ const SingleAttendance = () => {
     const fetchAttendanceData = async () => {
       setLoading(true);
       try {
-        const token = localStorage.getItem("token");
 
         const formatDate = (date) =>
           date ? new Date(date).toISOString().split("T")[0] : "";
@@ -51,7 +52,8 @@ const SingleAttendance = () => {
         const response = await axios.get(
           `${URL}/api/learner-attendance/${id}?${queryParams}`,
           {
-            headers: { Authorization: `Bearer ${token}` },
+                       withCredentials: true,
+
             signal: controller.signal,
           }
         );
@@ -67,8 +69,8 @@ const SingleAttendance = () => {
             error.response.data.message === "Credential Invalid or Expired Please Login Again")
         ) {
           return setTimeout(() => {
-            localStorage.clear();
-            navigate("/");
+           clearAuthState();
+            // navigate("/");
           }, 2000);
         }
       } finally {

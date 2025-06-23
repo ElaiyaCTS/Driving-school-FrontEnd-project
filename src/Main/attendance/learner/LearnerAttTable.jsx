@@ -5,11 +5,12 @@ import { URL } from "../../../App";
 import { useNavigate, useLocation } from "react-router-dom";
 import Pagination from "../../../Components/Pagination";
 import { extractDriveFileId } from "../../../Components/ImageProxyRouterFunction/funtion.js";
+import { useRole } from "../../../Components/AuthContext/AuthContext"; // adjust path as needed
 
 const LearnerAttTable = () => {
   const navigate = useNavigate();
   const location = useLocation();
-
+const {role, user,setUser,setRole,clearAuthState} =  useRole();
   const today = moment().format("YYYY-MM-DD");
   const [attendanceData, setAttendanceData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -67,8 +68,6 @@ useEffect(() => {
       setError(null);
 
       try {
-        const token = localStorage.getItem("token");
-
         const response = await axios.get(`${URL}/api/learner-attendance`, {
           params: {
             fromdate: fromDate,
@@ -79,9 +78,7 @@ useEffect(() => {
             search: searchTerm.trim(),
             date: date || undefined,
           },
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          withCredentials: true,
           signal: searchTerm.trim() ? controller.signal : undefined,
         });
 
@@ -97,8 +94,8 @@ useEffect(() => {
               error.response.data.message === "Credential Invalid or Expired Please Login Again")
           ) {
             setTimeout(() => {
-              localStorage.clear();
-              navigate("/");
+             clearAuthState();
+              // navigate("/");
             }, 2000);
           }
         }

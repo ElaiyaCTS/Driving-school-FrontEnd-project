@@ -3,9 +3,10 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { URL } from "../../../App";
 import { extractDriveFileId } from "../../../Components/ImageProxyRouterFunction/funtion.js";
-
+import { useRole } from "../../../Components/AuthContext/AuthContext"; // adjust path as needed
 const MarkIns = () => {
   const navigate = useNavigate();
+  const {role, user,setUser,setRole,clearAuthState} =  useRole();
   const [instructors, setInstructors] = useState([]);
   const [selectedInstructor, setSelectedInstructor] = useState("");
   const [toastOpen, setToastOpen] = useState(false);
@@ -35,9 +36,18 @@ const MarkIns = () => {
         const data = await response.json();
 
         setInstructors(data.instructorsWithDecrypted);
-      } catch (error) {
-        console.error("Error fetching instructors:", error);
+      } catch (err) {
+         if (!axios.isCancel(err)) {
+            // setError(err.response.data.message);
+        if (err.response &&(err.response.status === 401 ||err.response.data.message === "Invalid token")) {
+            setTimeout(() => {
+              clearAuthState();
+              // navigate("/");
+            }, 3000);
+          }
+        }
       }
+
     };
     fetchInstructors();
   }, []);
@@ -66,7 +76,6 @@ const MarkIns = () => {
     event.preventDefault();
     if (!validateForm()) return;
 
-    const token = localStorage.getItem("token");
     const checkInDateTime = `${date}T${checkIn}:00.000Z`;
     const checkOutDateTime = `${date}T${checkOut}:00.000Z`;
 
@@ -80,9 +89,7 @@ const MarkIns = () => {
 
     try {
       await axios.post(`${URL}/api/instructor-attendance`, attendanceData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+      withCredentials: true,
       });
 
       setToastOpen(true);
@@ -99,8 +106,8 @@ const MarkIns = () => {
         error.response.data.message === "Credential Invalid or Expired Please Login Again"
       ) {
         setTimeout(() => {
-          localStorage.clear();
-          navigate("/");
+          clearAuthState();
+          // navigate("/");
         }, 2000);
       }
     }

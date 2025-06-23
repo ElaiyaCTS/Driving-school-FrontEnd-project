@@ -42,7 +42,15 @@ const InsMarkAtt = () => {
         });
         setLearners(res.data.learners);
       } catch (err) {
-        console.error("Error fetching learners:", err);
+         if (!axios.isCancel(err)) {
+            // setError(err.response.data.message);
+        if (err.response &&(err.response.status === 401 ||err.response.data.message === "Invalid token")) {
+            setTimeout(() => {
+              clearAuthState();
+              // navigate("/");
+            }, 3000);
+          }
+        }
       }
     };
     const fetchCourseTypes = async () => {
@@ -60,8 +68,16 @@ const InsMarkAtt = () => {
           withCredentials: true,
         });
         setAssignedCourses(res.data.assignments);
-      } catch (err) {
-        console.error("Error fetching courses:", err);
+      }catch (err) {
+         if (!axios.isCancel(err)) {
+            // setError(err.response.data.message);
+        if (err.response &&(err.response.status === 401 ||err.response.data.message === "Invalid token")) {
+            setTimeout(() => {
+              clearAuthState();
+              // navigate("/");
+            }, 3000);
+          }
+        }
       }
     };
 
@@ -94,8 +110,15 @@ const InsMarkAtt = () => {
           setCourseError("");
           setAssignedCourses(assignments);
         } } catch (err) {
-        // console.error("Error fetching assigned courses:", err);
-        // setCourseError("Failed to fetch course assignments");
+         if (!axios.isCancel(err)) {
+            // setError(err.response.data.message);
+        if (err.response &&(err.response.status === 401 ||err.response.data.message === "Invalid token")) {
+            setTimeout(() => {
+              clearAuthState();
+              // navigate("/");
+            }, 3000);
+          }
+        }
       }
     }
   };
@@ -153,7 +176,7 @@ const InsMarkAtt = () => {
       }
 
       await axios.post(`${URL}/api/learner-attendance`, requestBody, {
-        headers: { Authorization: `Bearer ${token}` },
+    withCredentials: true,
       });
 
       setToastOpen(true);
@@ -170,8 +193,8 @@ const InsMarkAtt = () => {
             error.response.data.message === "Credential Invalid or Expired Please Login Again")
         ) {
           return setTimeout(() => {
-            window.localStorage.clear();
-            navigate("/");
+            clearAuthState();
+            // navigate("/");
           }, 2000);
         }
       }

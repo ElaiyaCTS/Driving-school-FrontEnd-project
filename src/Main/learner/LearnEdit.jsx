@@ -131,10 +131,7 @@ const LearEdit = () => {
 
     try {
       await axios.put(`${BURL}/api/user/learner/${admissionNumber}`, formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-          Authorization: `Bearer ${token}`,
-        },
+      withCredentials: true,
       });
 
       setToastOpen(true);
@@ -148,8 +145,8 @@ const LearEdit = () => {
       // console.error("Error updating learner:", error);
       if (error.response?.data?.message === "Credential Invalid or Expired Please Login Again") {
         setTimeout(() => {
-          window.localStorage.clear();
-          navigate("/");
+          clearAuthState();
+          // navigate("/");
         }, 2000);
       }
     }

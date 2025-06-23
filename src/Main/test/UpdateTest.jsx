@@ -50,9 +50,8 @@ const UpdateTest = () => {
   useEffect(() => {
     const fetchTest = async () => {
       try {
-        const token = localStorage.getItem("token");
         const res = await axios.get(`${URL}/api/tests/ById/${id}`, {
-          headers: { Authorization: `Bearer ${token}` },
+         withCredentials: true,
         });
 
         const test = res.data.test;
@@ -61,9 +60,18 @@ const UpdateTest = () => {
         setTestDate(formatDate(test.date));
         setSelectedResult(test.result || "");
         setLearnerId(test.learnerId?._id || "");
-      } catch (error) {
-        // console.error("Error fetching test data:", error.message);
+      } catch (err) {
+         if (!axios.isCancel(err)) {
+            // setError(err.response.data.message);
+        if (err.response &&(err.response.status === 401 ||err.response.data.message === "Invalid token")) {
+            setTimeout(() => {
+              clearAuthState();
+              // navigate("/");
+            }, 3000);
+          }
+        }
       }
+
     };
     if (id) fetchTest();
   }, [id]);
@@ -71,7 +79,6 @@ const UpdateTest = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const token = localStorage.getItem("token");
       const Data = {
         learnerId,
         testType: selectedTest,
@@ -80,9 +87,7 @@ const UpdateTest = () => {
       };
 
       await axios.put(`${URL}/api/tests/${id}`, Data, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+       withCredentials: true,
       });
 
       setToastOpen(true);
@@ -97,8 +102,8 @@ const UpdateTest = () => {
           error.response.data.message === "Credential Invalid or Expired Please Login Again")
       ) {
         setTimeout(() => {
-          window.localStorage.clear();
-          navigate("/");
+          clearAuthState();
+          // navigate("/");
         }, 2000);
       }
     }

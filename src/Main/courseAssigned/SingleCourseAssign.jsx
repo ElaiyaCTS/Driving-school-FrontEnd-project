@@ -4,8 +4,10 @@ import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import Pagination from "../../Components/Pagination";
 import { FaSyncAlt } from "react-icons/fa";
-
+import { useRole } from "../../Components/AuthContext/AuthContext"; // adjust path as needed
 const SingleCourseAssign = () => {
+    const {role, user,setUser,setRole,clearAuthState} =  useRole();
+
   const { id } = useParams();
   const navigate = useNavigate();
   const [learners, setLearners] = useState([]);
@@ -20,7 +22,6 @@ const SingleCourseAssign = () => {
 
   useEffect(() => {
     const controller = new AbortController();
-    const token = localStorage.getItem("token");
 
     const fetchData = async () => {
       setLoading(true);
@@ -52,8 +53,8 @@ const SingleCourseAssign = () => {
             error.response.data.message === "Credential Invalid or Expired Please Login Again")
         ) {
           setTimeout(() => {
-            window.localStorage.clear();
-            navigate("/");
+          clearAuthState();
+            // navigate("/");
           }, 2000);
         }
       } finally {

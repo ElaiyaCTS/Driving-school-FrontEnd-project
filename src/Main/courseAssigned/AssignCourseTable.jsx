@@ -4,9 +4,10 @@ import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import Pagination from "../../Components/Pagination";
 import { extractDriveFileId } from "../../Components/ImageProxyRouterFunction/funtion.js";
-
+import { useRole } from "../../Components/AuthContext/AuthContext"; // adjust path as needed
 const AssignCourseTable = () => {
   const navigate = useNavigate();
+  const {role, user,setUser,setRole,clearAuthState} =  useRole();
   const location = useLocation();
   const [learners, setLearners] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -77,11 +78,8 @@ const AssignCourseTable = () => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const token = localStorage.getItem("token");
         const response = await axios.get(`${URL}/api/course-assigned`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+        withCredentials: true,
           params: {
             search: search.length >= 3 ? search : undefined,
             statusOne: statusOne || undefined,
@@ -105,8 +103,8 @@ const AssignCourseTable = () => {
               error.response.data.message === "Credential Invalid or Expired Please Login Again")
           ) {
             setTimeout(() => {
-              localStorage.clear();
-              navigate("/");
+              clearAuthState();
+              // navigate("/");
             }, 2000);
           }
         }

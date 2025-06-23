@@ -3,8 +3,11 @@ import { URL } from "../../../App";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { extractDriveFileId } from "../../../Components/ImageProxyRouterFunction/funtion.js";
+import { useRole } from "../../../Components/AuthContext/AuthContext";
 
 const MarkStaff = () => {
+   const {role, user,setUser,setRole,clearAuthState} =  useRole();
+
   const navigate = useNavigate();
   const [staffList, setStaffList] = useState([]);
   const [selectedStaff, setSelectedStaff] = useState(null);
@@ -24,13 +27,20 @@ const MarkStaff = () => {
   useEffect(() => {
     const fetchStaff = async () => {
       try {
-        const token = localStorage.getItem("token");
         const res = await axios.get(`${URL}/api/staff`, {
-          headers: { Authorization: `Bearer ${token}` },
+                     withCredentials: true,
         });
         setStaffList(res.data.staffList);
-      } catch (err) {
-        console.error("Error fetching staff:", err.response || err);
+      }catch (err) {
+         if (!axios.isCancel(err)) {
+            // setError(err.response.data.message);
+        if (err.response &&(err.response.status === 401 ||err.response.data.message === "Invalid token")) {
+            setTimeout(() => {
+              clearAuthState();
+              // navigate("/");
+            }, 3000);
+          }
+        }
       }
     };
 
@@ -66,8 +76,7 @@ const MarkStaff = () => {
     }
 
     try {
-      const token = localStorage.getItem("token");
-      if (!token) throw new Error("No token found in local storage");
+     
       const checkInDateTime = `${date}T${checkIn}:00.000Z`;
       const checkOutDateTime = `${date}T${checkOut}:00.000Z`;
 
@@ -80,7 +89,7 @@ const MarkStaff = () => {
       };
 
       await axios.post(`${URL}/api/admin/staff-attendance`, payload, {
-        headers: { Authorization: `Bearer ${token}` },
+                   withCredentials: true,
       });
 
       setToastOpen(true);
@@ -91,8 +100,8 @@ const MarkStaff = () => {
     } catch (error) {
       console.error("Error submitting data:", error);
       if (error.response && error.response.status === 401) {
-        localStorage.removeItem("token");
-        navigate("/");
+        clearAuthState()
+        // navigate("/");
       }
     }
   };

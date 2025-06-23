@@ -6,9 +6,12 @@ import Pagination from "../../../Components/Pagination";
 import moment from "moment";
 import { FaSyncAlt } from "react-icons/fa";
 import { jwtDecode } from "jwt-decode";
+import { useRole } from "../../../Components/AuthContext/AuthContext"; // adjust path as needed
 
 const InstructorDashAttendance = () => {
   const navigate = useNavigate();
+    const {role, user,setUser,setRole,clearAuthState} =  useRole();
+
   const [attendance, setAttendance] = useState([]);
   const [records, setRecords] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -34,7 +37,6 @@ const InstructorDashAttendance = () => {
     const fetchAttendance = async () => {
       setLoading(true);
       try {
-        const token = localStorage.getItem("token");
         if (fromDate && toDate && new Date(fromDate) > new Date(toDate)) {
           console.error(
             "Invalid date range. 'From Date' cannot be greater than 'To Date'."
@@ -70,7 +72,7 @@ const InstructorDashAttendance = () => {
               error.response.data.message === "Credential Invalid or Expired Please Login Again")
           ) {
             return setTimeout(() => {
-              localStorage.clear();
+              clearAuthState;
               navigate("/");
             }, 2000);
           }

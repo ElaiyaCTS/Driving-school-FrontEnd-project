@@ -31,11 +31,10 @@ const StaffEdit = () => {
   };
 
   const fetchStaff = async () => {
-    const token = localStorage.getItem("token");
 
     try {
       const response = await axios.get(`${BURL}/api/admin/staff/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
+       withCredentials: true,
       });
 
       if (response.data.data) {

@@ -113,8 +113,8 @@ console.log(user);
             error.response.data.message === "Credential Invalid or Expired Please Login Again")
         ) {
           return setTimeout(() => {
-            window.localStorage.clear();
-            navigate("/");
+          clearAuthState();
+            // navigate("/");
           }, 2000);
         }
       }

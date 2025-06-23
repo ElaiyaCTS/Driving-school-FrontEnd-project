@@ -3,13 +3,14 @@ import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import { URL } from "../../App";
 import Pagination from "../../Components/Pagination";
+import { useRole } from "../../Components/AuthContext/AuthContext"; // adjust path as needed
 
 const CourseTable = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const {role, user,setUser,setRole,clearAuthState} =  useRole();
 
   const itemsPerPage = 10;
-  const token = localStorage.getItem("token");
 
   // Read query params
   const query = useMemo(() => {
@@ -87,8 +88,8 @@ const CourseTable = () => {
             error.response.data.message === "Credential Invalid or Expired Please Login Again")
         ) {
           return setTimeout(() => {
-            localStorage.clear();
-            navigate("/");
+            clearAuthState();
+            // navigate("/");
           }, 2000);
         }
       } finally {

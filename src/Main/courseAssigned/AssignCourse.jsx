@@ -3,9 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { URL } from "../../App";
 import axios from "axios";
 import { extractDriveFileId } from "../../Components/ImageProxyRouterFunction/funtion.js";
-
+import { useRole } from "../../Components/AuthContext/AuthContext"; // adjust path as needed
 const AssignCourse = () => {
   const navigate = useNavigate();
+  const {role, user,setUser,setRole,clearAuthState} =  useRole();
   const [selectedCourse, setSelectedCourse] = useState("");
   const [selectedLearner, setSelectedLearner] = useState("");
   const [learners, setLearners] = useState([]);
@@ -19,12 +20,11 @@ const AssignCourse = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const token = localStorage.getItem("token");
-        const headers = { Authorization: `Bearer ${token}` };
-
+       
+const config = { withCredentials: true };
         const [learnersRes, coursesRes] = await Promise.all([
-          axios.get(`${URL}/api/user/learners`, { headers }),
-          axios.get(`${URL}/api/courses`, { headers }),
+          axios.get(`${URL}/api/user/learners`,config),
+          axios.get(`${URL}/api/courses`,config),
         ]);
 
         setLearners(
@@ -43,8 +43,8 @@ const AssignCourse = () => {
               error.response.data.message === "Credential Invalid or Expired Please Login Again")
           ) {
             setTimeout(() => {
-              window.localStorage.clear();
-              navigate("/");
+             clearAuthState();
+              // navigate("/");
             }, 2000);
           }
         }
@@ -63,9 +63,9 @@ const AssignCourse = () => {
     };
 
     try {
-      const token = localStorage.getItem("token");
-      const headers = { Authorization: `Bearer ${token}` };
-      await axios.post(`${URL}/api/course-assigned`, requestData, { headers });
+        const config = { withCredentials: true };
+
+      await axios.post(`${URL}/api/course-assigned`, requestData,config);
 
       setSuccess(true);
       setTimeout(() => {
@@ -79,8 +79,8 @@ const AssignCourse = () => {
           (error.response.status === 401 || error.response.data.message === "Credential Invalid or Expired Please Login Again")
         ) {
           setTimeout(() => {
-            window.localStorage.clear();
-            navigate("/");
+           clearAuthState();
+            // navigate("/");
           }, 2000);
         } 
       }

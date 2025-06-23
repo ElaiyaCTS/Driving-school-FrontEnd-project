@@ -5,10 +5,13 @@ import { URL } from "../../../App";
 import moment from "moment";
 import Pagination from "../../../Components/Pagination";
 import { extractDriveFileId } from "../../../Components/ImageProxyRouterFunction/funtion.js";
+import { useRole } from "../../../Components/AuthContext/AuthContext"; // adjust path as needed
 
 const StaffAttTable = () => {
   const navigate = useNavigate();
   const location = useLocation();
+    const {role, user,setUser,setRole,clearAuthState} =  useRole();
+
   const today = new Date().toISOString().split("T")[0];
 
   const [staffList, setStaffList] = useState([]);
@@ -109,7 +112,6 @@ const StaffAttTable = () => {
       setLoading(true);
 
       try {
-        const token = localStorage.getItem("token");
 
         const formattedFromDate = fromDate
           ? moment(fromDate).format("YYYY-MM-DD")
@@ -145,8 +147,8 @@ const StaffAttTable = () => {
               error.response.data.message === "Credential Invalid or Expired Please Login Again")
           ) {
             setTimeout(() => {
-              localStorage.clear();
-              navigate("/");
+              clearAuthState();
+              // navigate("/");
             }, 2000);
           }
         }

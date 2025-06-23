@@ -2,8 +2,9 @@ import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import { URL } from "../../App";
-
+import { useRole } from "../../Components/AuthContext/AuthContext"; // adjust path as needed
 const UpdateCourse = () => {
+  const {role, user,setUser,setRole,clearAuthState} =  useRole();
   const navigate = useNavigate();
   const { id } = useParams();
   const [course, setCourse] = useState({
@@ -18,13 +19,11 @@ const UpdateCourse = () => {
 
   useEffect(() => {
     const fetchCourse = async () => {
-      const token = localStorage.getItem("token");
+     
 
       try {
         const response = await axios.get(`${URL}/api/courses/${id}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          withCredentials: true,
         });
 
         setCourse(response.data);
@@ -37,8 +36,8 @@ const UpdateCourse = () => {
               error.response.data.message === "Credential Invalid or Expired Please Login Again")
           ) {
             return setTimeout(() => {
-              window.localStorage.clear();
-              navigate("/");
+              clearAuthState();
+              // navigate("/");
             }, 2000);
           }
         }
@@ -64,7 +63,6 @@ const UpdateCourse = () => {
     e.preventDefault();
 
     try {
-      const token = localStorage.getItem("token");
 
       await axios.put(`${URL}/api/courses/${id}`, course, {
        withCredentials: true, });
@@ -83,8 +81,8 @@ const UpdateCourse = () => {
             error.response.data.message === "Credential Invalid or Expired Please Login Again")
         ) {
           return setTimeout(() => {
-            window.localStorage.clear();
-            navigate("/");
+            clearAuthState();
+            // navigate("/");
           }, 2000);
         }
       }

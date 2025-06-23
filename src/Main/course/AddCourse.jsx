@@ -2,10 +2,10 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { URL } from "../../App";
 import axios from "axios";
-
+import { useRole } from "../../Components/AuthContext/AuthContext"; // adjust path as needed
 const AddCourse = () => {
   const navigate = useNavigate();
-
+const {role, user,setUser,setRole,clearAuthState} =  useRole();
   const [newCourse, setNewCourse] = useState({
     courseName: "",
     duration: "",
@@ -58,9 +58,7 @@ const AddCourse = () => {
       if (!token) throw new Error("Token is missing.");
 
       await axios.post(`${URL}/api/courses`, newCourse, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+       withCredentials: true,
       });
 
       setToastOpen(true);
@@ -77,8 +75,8 @@ const AddCourse = () => {
             error.response.data.message === "Credential Invalid or Expired Please Login Again")
         ) {
           return setTimeout(() => {
-            window.localStorage.clear();
-            navigate("/");
+           clearAuthState();
+            // navigate("/");
           }, 2000);
         }
       }

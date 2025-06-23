@@ -3,9 +3,11 @@ import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import { URL } from "../../App";
 import { extractDriveFileId } from "../../Components/ImageProxyRouterFunction/funtion.js";
-
+import { useRole } from "../../Components/AuthContext/AuthContext";
 const AssignUpdate = () => {
   const navigate = useNavigate();
+   const {role, user,setUser,setRole,clearAuthState} =  useRole();
+
   const { id } = useParams();
   const token = localStorage.getItem("token");
   const [assignment, setAssignment] = useState(null);
@@ -35,7 +37,7 @@ const AssignUpdate = () => {
       const response = await axios.get(
         `${URL}/api/course-assigned/ById/${id}`,
         {
-          headers: { Authorization: `Bearer ${token}` },
+         withCredentials: true,
         }
       );
       setAssignment(response.data);
@@ -48,8 +50,8 @@ const AssignUpdate = () => {
         (error.response.status === 401 ||
           error.response.data.message === "Credential Invalid or Expired Please Login Again")
       ) {
-        localStorage.clear();
-        setTimeout(() => navigate("/"), 2000);
+        setTimeout(() => clearAuthState()
+, 2000);
       }
     }
   };
@@ -64,7 +66,7 @@ const AssignUpdate = () => {
           course: assignment.course._id,
           statusOne: selectedStatusOne,
         },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { withCredentials: true, }
       );
       setSuccess(true);
       setTimeout(() => {
@@ -78,8 +80,7 @@ const AssignUpdate = () => {
         (error.response.status === 401 ||
           error.response.data.message === "Credential Invalid or Expired Please Login Again")
       ) {
-        localStorage.clear();
-        setTimeout(() => navigate("/"), 2000);
+        setTimeout(() =>clearAuthState(), 2000);
       }
     }
   };
@@ -87,7 +88,8 @@ const AssignUpdate = () => {
   const fetchLearner = async () => {
     try {
       const LearnerRes = await axios.get(`${URL}/api/user/learners`, {
-        headers: { Authorization: `Bearer ${token}` },
+                  withCredentials: true,
+
       });
 
       setLearners(LearnerRes.data.learners || []);
@@ -100,8 +102,8 @@ const AssignUpdate = () => {
             error.response.data.message === "Credential Invalid or Expired Please Login Again")
         ) {
           setTimeout(() => {
-            window.localStorage.clear();
-            navigate("/");
+                    clearAuthState();
+            // navigate("/");
           }, 2000);
         }
       }
@@ -119,7 +121,7 @@ const AssignUpdate = () => {
   const fetchCourse = async () => {
     try {
       const coursesRes = await axios.get(`${URL}/api/courses`, {
-        headers: { Authorization: `Bearer ${token}` },
+                   withCredentials: true,
       });
       setCourses(coursesRes.data.courses || []);
     } catch (error) {
@@ -131,8 +133,8 @@ const AssignUpdate = () => {
             error.response.data.message === "Credential Invalid or Expired Please Login Again")
         ) {
           setTimeout(() => {
-            window.localStorage.clear();
-            navigate("/");
+            clearAuthState();
+            // navigate("/");
           }, 2000);
         }
       }

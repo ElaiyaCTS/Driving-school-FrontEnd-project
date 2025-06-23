@@ -5,10 +5,13 @@ import { useNavigate, useParams } from "react-router-dom";
 import Pagination from "../../../Components/Pagination";
 import moment from "moment";
 import { FaSyncAlt } from "react-icons/fa";
+import { useRole } from "../../../Components/AuthContext/AuthContext"; // adjust path as needed
 
 const SingleInstructorAttendance = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+    const {role, user,setUser,setRole,clearAuthState} =  useRole();
+
   // const [attendance, setAttendance] = useState([]);
   const [records, setRecords] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -31,7 +34,6 @@ const SingleInstructorAttendance = () => {
     const fetchStaff = async () => {
       setLoading(true);
       try {
-        const token = localStorage.getItem("token");
 
         if (fromDate && toDate && new Date(fromDate) > new Date(toDate)) {
           console.error(
@@ -67,8 +69,8 @@ const SingleInstructorAttendance = () => {
             error.response.data?.message === "Credential Invalid or Expired Please Login Again")
         ) {
           setTimeout(() => {
-            localStorage.clear();
-            navigate("/");
+           clearAuthState();
+            // navigate("/");
           }, 2000);
         }
       } finally {

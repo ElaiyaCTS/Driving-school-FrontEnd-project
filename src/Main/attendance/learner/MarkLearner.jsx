@@ -3,9 +3,11 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { URL } from "../../../App";
 import { extractDriveFileId } from "../../../Components/ImageProxyRouterFunction/funtion.js";
-
+import { useRole } from "../../../Components/AuthContext/AuthContext";
 const MarkLearner = () => {
-  const token = localStorage.getItem("token");
+ const {role, user,setUser,setRole,clearAuthState} =  useRole();
+
+
   const navigate = useNavigate();
 
   const [learners, setLearners] = useState([]);
@@ -36,16 +38,24 @@ const MarkLearner = () => {
     const fetchLearners = async () => {
       try {
         const res = await axios.get(`${URL}/api/user/learners`, {
-          headers: { Authorization: `Bearer ${token}` },
+                    withCredentials: true,
         });
         setLearners(res.data.learners);
       } catch (err) {
-        console.error("Error fetching learners:", err);
+         if (!axios.isCancel(err)) {
+            // setError(err.response.data.message);
+        if (err.response &&(err.response.status === 401 ||err.response.data.message === "Invalid token")) {
+            setTimeout(() => {
+              clearAuthState();
+              // navigate("/");
+            }, 3000);
+          }
+        }
       }
     };
 
     fetchLearners();
-  }, [token]);
+  }, [role]);
 
   const handleLearnerChange = async (learnerId) => {
     const selected = learners.find((l) => l._id === learnerId);
@@ -58,7 +68,8 @@ const MarkLearner = () => {
     if (learnerId) {
       try {
         const res = await axios.get(`${URL}/api/course-assigned/${learnerId}`, {
-          headers: { Authorization: `Bearer ${token}` },
+                    withCredentials: true,
+
         });
         const assignments = res.data.assignments;
         if (!assignments || assignments.length === 0 ) {
@@ -68,9 +79,16 @@ const MarkLearner = () => {
           setCourseError("");
           setAssignedCourses(assignments);
         }
-      } catch (err) {
-        // console.error("Error fetching assigned courses:", err);
-        // setCourseError("Failed to fetch course assignments");
+      }catch (err) {
+         if (!axios.isCancel(err)) {
+            // setError(err.response.data.message);
+        if (err.response &&(err.response.status === 401 ||err.response.data.message === "Invalid token")) {
+            setTimeout(() => {
+              clearAuthState();
+              // navigate("/");
+            }, 3000);
+          }
+        }
       }
     }
   };
@@ -128,7 +146,8 @@ const MarkLearner = () => {
       }
 
       await axios.post(`${URL}/api/learner-attendance`, requestBody, {
-        headers: { Authorization: `Bearer ${token}` },
+                   withCredentials: true,
+
       });
 
       setToastOpen(true);
@@ -144,8 +163,8 @@ const MarkLearner = () => {
             error.response.data.message === "Credential Invalid or Expired Please Login Again")
         ) {
           return setTimeout(() => {
-            window.localStorage.clear();
-            navigate("/");
+           clearAuthState();
+            // navigate("/");
           }, 2000);
         }
       }
