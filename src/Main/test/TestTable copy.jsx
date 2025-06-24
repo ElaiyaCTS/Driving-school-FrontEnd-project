@@ -10,7 +10,7 @@ import { useRole } from "../../Components/AuthContext/AuthContext";
 const TestTable = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { role, user, setUser, setRole, clearAuthState } = useRole();
+        const {role, user,setUser,setRole,clearAuthState} =  useRole();
 
   const [tests, setTests] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -23,9 +23,8 @@ const TestTable = () => {
   const [loading, setLoading] = useState(true);
   const [limit] = useState(10);
   const debounceRef = useRef(null);
-  const abortRef = useRef(null);
-  const lastPasteRef = useRef(0);
 
+  // Update URL based on filters
   const updateURLParams = (params) => {
     const query = new URLSearchParams();
     if (params.search?.trim()) query.set("search", params.search.trim());
@@ -38,6 +37,7 @@ const TestTable = () => {
     navigate({ search: query.toString() });
   };
 
+  // Load URL params into state on mount or when URL changes
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     setSearchQuery(params.get("search") || "");
@@ -48,10 +48,29 @@ const TestTable = () => {
     setCurrentPage(Number(params.get("page")) || 1);
   }, [location.search]);
 
+  useEffect(() => {
+  const params = new URLSearchParams(location.search);
+  const page = params.get("page");
+  const limitParam = params.get("limit");
+
+  // If no params found, set default ?page=1&limit=10
+  if (!page || !limitParam) {
+    const query = new URLSearchParams();
+    query.set("page", "1");
+    query.set("limit", "10");
+    navigate({ search: query.toString() }, { replace: true });
+    return;
+  }
+
+  setSearchQuery(params.get("search") || "");
+  setTestType(params.get("testType") || "");
+  setResult(params.get("result") || "");
+  setFromDate(params.get("fromDate") || "");
+  setToDate(params.get("toDate") || "");
+  setCurrentPage(Number(page));
+}, [location.search]);
+
   const fetchTests = async () => {
-    if (abortRef.current) abortRef.current.abort();
-    const controller = new AbortController();
-    abortRef.current = controller;
     setLoading(true);
     try {
       const params = {
@@ -63,42 +82,33 @@ const TestTable = () => {
         page: currentPage,
         limit,
       };
-      const response = await axios.get(`${URL}/api/tests`, {
-        params,
-        signal: controller.signal,
-        withCredentials: true,
-      });
+
+      const response = await axios.get(`${URL}/api/tests`, { params,withCredentials: true });
       setTests(response.data.tests || []);
       setTotalPages(response.data.totalPages || 1);
     } catch (error) {
-      if (
-        error.name !== "CanceledError" &&
-        error.response &&
-        (error.response.status === 401 ||
-          error.response.data.message === "Credential Invalid or Expired Please Login Again")
-      ) {
-        setTimeout(() => {
-          clearAuthState();
-        }, 2000);
-      }
+      // setError(error.message);
+          if (
+            error.response &&
+            (error.response.status === 401 ||
+              error.response.data.message === "Credential Invalid or Expired Please Login Again")
+          ) {
+            setTimeout(() => {
+             clearAuthState();
+              // navigate("/");
+            }, 2000);
+          }
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    if ((fromDate && !toDate) || (!fromDate && toDate)) return;
-
     if (debounceRef.current) clearTimeout(debounceRef.current);
-
-    const now = Date.now();
-    const isPaste = now - lastPasteRef.current < 100;
-
-    if (isPaste) {
+    debounceRef.current = setTimeout(() => {
+       if ((fromDate && !toDate) || (!fromDate && toDate)) return;
       fetchTests();
-    } else {
-      debounceRef.current = setTimeout(fetchTests, searchQuery ? 2000 : 0);
-    }
+    }, searchQuery ? 2000 : 0);
   }, [searchQuery, testType, result, fromDate, toDate, currentPage]);
 
   const handleSearch = (e) => {
@@ -106,10 +116,6 @@ const TestTable = () => {
     setSearchQuery(value);
     setCurrentPage(1);
     updateURLParams({ search: value, testType, result, fromDate, toDate, page: 1 });
-  };
-
-  const handlePaste = () => {
-    lastPasteRef.current = Date.now();
   };
 
   const handleTestTypeChange = (e) => {
@@ -127,86 +133,38 @@ const TestTable = () => {
   };
 
   const handleFromDateChange = (e) => {
-  const value = e.target.value;
-  setFromDate(value);
-
-  // If fromDate is cleared, also clear toDate
-  if (!value) {
-    setToDate("");
-    updateURLParams({
-      search: searchQuery,
-      testType,
-      result,
-      fromDate: "",
-      toDate: "",
-      page: 1,
-    });
-  } else {
-    // Keep toDate as is if fromDate is set
+    const value = e.target.value;
+    setFromDate(value);
+    const newToDate = value ? toDate : "";
+    setToDate(newToDate);
     updateURLParams({
       search: searchQuery,
       testType,
       result,
       fromDate: value,
-      toDate,
+      toDate: newToDate,
       page: 1,
     });
-  }
+    setCurrentPage(1);
+  };
 
-  setCurrentPage(1);
-};
-
-const handleToDateChange = (e) => {
-  const value = e.target.value;
-  setToDate(value);
-if (!value) {
-    setToDate("");
-    updateURLParams({
-      search: searchQuery,
-      testType,
-      result,
-      fromDate: "",
-      toDate: "",
-      page: 1,
-    });
-  } else {
-    
+  const handleToDateChange = (e) => {
+    const value = e.target.value;
+    setToDate(value);
     updateURLParams({
       search: searchQuery,
       testType,
       result,
       fromDate,
-      toDate:value,
+      toDate: value,
       page: 1,
     });
-  }
-
-  setCurrentPage(1);
-};
-
+  };
 
   const handlePageChange = (page) => {
     setCurrentPage(page);
     updateURLParams({ search: searchQuery, testType, result, fromDate, toDate, page });
   };
-
-//   return (
-//     <div className="p-6">
-//       <input
-//         type="text"
-//         value={searchQuery}
-//         onChange={handleSearch}
-//         onPaste={handlePaste}
-//         placeholder="Search..."
-//         className="pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-full"
-//       />
-//       {/* ...rest of your component */}
-//     </div>
-//   );
-// };
-
-// export default TestTable;
-
   return (
     <div className="p-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
@@ -246,8 +204,6 @@ if (!value) {
               placeholder="Search..."
               value={searchQuery}
               onChange={handleSearch}
-        onPaste={handlePaste}
-
             />
 
             {searchQuery && (

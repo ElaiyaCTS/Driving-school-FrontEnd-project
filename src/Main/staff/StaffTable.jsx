@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { URL } from "../../App";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -8,18 +8,22 @@ import { useRole } from "../../Components/AuthContext/AuthContext";
 
 const StaffTable = () => {
   const navigate = useNavigate();
-        const {role, user,setUser,setRole,clearAuthState} =  useRole();
-
   const location = useLocation();
+  const { clearAuthState } = useRole();
+
   const [staff, setStaff] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [TotalPages, setTotalPages] = useState(1);
-  const [limit] = useState(10); // default limit
+  const [limit] = useState(10);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedGender, setSelectedGender] = useState("");
+
+  const controllerRef = useRef(null);
+  const debounceRef = useRef(null);
+  const isPasteRef = useRef(false);
 
   const updateURLParams = ({ search, gender, page }) => {
     const params = new URLSearchParams(location.search);
@@ -33,44 +37,47 @@ const StaffTable = () => {
     if (page !== undefined) {
       page && page > 1 ? params.set("page", page) : params.set("page", "1");
     }
-    params.set("limit", limit); // Always show limit
+    params.set("limit", limit);
 
     navigate({ search: params.toString() }, { replace: true });
   };
 
-  // Set state from URL params or default values
+  // Set state from URL once on mount
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const genderFromURL = params.get("gender") || "";
     const searchFromURL = params.get("search") || "";
     const pageFromURL = parseInt(params.get("page")) || 1;
 
-    const shouldUpdateURL =
-      !params.has("page") || !params.has("limit");
+    const shouldUpdate =
+      !params.has("limit") ||
+      searchQuery !== searchFromURL ||
+      selectedGender !== genderFromURL ||
+      currentPage !== pageFromURL;
 
     setSelectedGender(genderFromURL);
     setSearchQuery(searchFromURL);
     setCurrentPage(pageFromURL);
 
-    if (shouldUpdateURL) {
+    if (shouldUpdate) {
       updateURLParams({
         search: searchFromURL,
         gender: genderFromURL,
         page: pageFromURL,
       });
     }
-  }, [location.search]);
+  }, []);
 
-  // Fetch data when filters change
+  // Fetch staff data
   useEffect(() => {
+    if (controllerRef.current) controllerRef.current.abort();
     const controller = new AbortController();
-    let debounceTimer;
+    controllerRef.current = controller;
 
     const fetchData = async () => {
       try {
         setLoading(true);
         setError(null);
-     
 
         const params = {};
         if (searchQuery.trim()) params.search = searchQuery;
@@ -81,27 +88,26 @@ const StaffTable = () => {
         const response = await axios.get(`${URL}/api/staff`, {
           withCredentials: true,
           params,
-          signal: searchQuery.trim() ? controller.signal : undefined,
+          signal: controller.signal,
         });
 
         setStaff(response.data.staffList || []);
         setCurrentPage(response.data.currentPage || 1);
         setTotalPages(response.data.totalPages || 1);
-        
       } catch (error) {
         if (axios.isCancel(error) || error.name === "CanceledError") {
-          console.log("Search request was cancelled");
+          console.log("Request was cancelled");
         } else {
-          console.error("Error fetching data:", error);
+          console.error("Error fetching staff:", error);
           setError(error.message);
           if (
             error.response &&
             (error.response.status === 401 ||
-              error.response.data.message === "Credential Invalid or Expired Please Login Again")
+              error.response.data.message ===
+                "Credential Invalid or Expired Please Login Again")
           ) {
             setTimeout(() => {
-             clearAuthState();
-              // navigate("/");
+              clearAuthState();
             }, 2000);
           }
         }
@@ -110,15 +116,21 @@ const StaffTable = () => {
       }
     };
 
-    if (searchQuery.trim()) {
-      debounceTimer = setTimeout(fetchData, 2000);
+    // Debounce fetch unless it's a paste
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+
+    if (isPasteRef.current) {
+      fetchData(); // immediate fetch on paste
+      isPasteRef.current = false;
     } else {
-      fetchData();
+      debounceRef.current = setTimeout(() => {
+        fetchData();
+      }, 1500); // debounced fetch
     }
 
     return () => {
-      if (debounceTimer) clearTimeout(debounceTimer);
-      if (searchQuery.trim()) controller.abort();
+      controller.abort();
+      if (debounceRef.current) clearTimeout(debounceRef.current);
     };
   }, [searchQuery, selectedGender, currentPage]);
 
@@ -127,6 +139,10 @@ const StaffTable = () => {
     setSearchQuery(value);
     setCurrentPage(1);
     updateURLParams({ search: value, gender: selectedGender, page: 1 });
+  };
+
+  const handlePaste = () => {
+    isPasteRef.current = true; // flag paste event to bypass debounce
   };
 
   const handleGenderChange = (e) => {
@@ -142,7 +158,6 @@ const StaffTable = () => {
       updateURLParams({ search: searchQuery, gender: selectedGender, page });
     }
   };
-
 
   return (
     <div className="p-4">
@@ -180,6 +195,7 @@ const StaffTable = () => {
             placeholder="Search..."
             value={searchQuery}
             onChange={handleSearchChange}
+            onPaste={handlePaste}
           />
         </div>
 
@@ -233,7 +249,9 @@ const StaffTable = () => {
                       </th>
                       <td className="px-6 py-4">
                         <img
-                          src={`${URL}/api/image-proxy/${extractDriveFileId(instructor.photo)}`}
+                          src={`${URL}/api/image-proxy/${extractDriveFileId(
+                            instructor.photo
+                          )}`}
                           alt={`${instructor.fullName}'s profile`}
                           className="w-16 h-16 object-cover rounded-full border-2 border-white shadow-md"
                         />
@@ -244,13 +262,17 @@ const StaffTable = () => {
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2 mt-4">
                           <button
-                            onClick={() => navigate(`/admin/staff/${instructor._id}/view`)}
+                            onClick={() =>
+                              navigate(`/admin/staff/${instructor._id}/view`)
+                            }
                             className="bg-gray-100 hover:bg-gray-200 px-2 py-1 rounded"
                           >
                             <i className="fa-solid fa-eye text-blue-600"></i>
                           </button>
                           <button
-                            onClick={() => navigate(`/admin/staff/${instructor._id}/edit`)}
+                            onClick={() =>
+                              navigate(`/admin/staff/${instructor._id}/edit`)
+                            }
                             className="bg-gray-100 hover:bg-gray-200 px-2 py-1 rounded"
                           >
                             <i className="fa-solid fa-pen-to-square text-blue-600"></i>

@@ -4,97 +4,95 @@ import { URL } from "../../App";
 import { useNavigate, useLocation } from "react-router-dom";
 import Pagination from "../../Components/Pagination";
 import { extractDriveFileId } from "../../Components/ImageProxyRouterFunction/funtion.js";
-import { useRole } from "../../Components/AuthContext/AuthContext"; // adjust path as needed
+import { useRole } from "../../Components/AuthContext/AuthContext";
 
-const InstructorTable = () => {
+const StaffTable = () => {
   const navigate = useNavigate();
+        const {role, user,setUser,setRole,clearAuthState} =  useRole();
+
   const location = useLocation();
-  const {role, user,setUser,setRole,clearAuthState} =  useRole();
-
-  const [instructors, setInstructors] = useState([]);
-
+  const [staff, setStaff] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [limit, setLimit] = useState(10);
   const [TotalPages, setTotalPages] = useState(1);
+  const [limit] = useState(10); // default limit
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedGender, setSelectedGender] = useState("");
 
- 
-// On first load, if page or limit is missing in URL, add default values to URL
-useEffect(() => {
-  const params = new URLSearchParams(location.search);
-  let shouldUpdate = false;
+  const updateURLParams = ({ search, gender, page }) => {
+    const params = new URLSearchParams(location.search);
 
-  if (!params.get("page")) {
-    params.set("page", "1");
-    shouldUpdate = true;
-  }
+    if (search !== undefined) {
+      search ? params.set("search", search) : params.delete("search");
+    }
+    if (gender !== undefined) {
+      gender ? params.set("gender", gender) : params.delete("gender");
+    }
+    if (page !== undefined) {
+      page && page > 1 ? params.set("page", page) : params.set("page", "1");
+    }
+    params.set("limit", limit); // Always show limit
 
-  if (!params.get("limit")) {
-    params.set("limit", limit.toString());
-    shouldUpdate = true;
-  }
-
-  if (shouldUpdate) {
     navigate({ search: params.toString() }, { replace: true });
-  }
-}, [location.search]);
+  };
 
-const updateURLParams = ({ search, gender, page }) => {
-  const params = new URLSearchParams(location.search);
+  // Set state from URL params or default values
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const genderFromURL = params.get("gender") || "";
+    const searchFromURL = params.get("search") || "";
+    const pageFromURL = parseInt(params.get("page")) || 1;
 
-  if (search !== undefined) {
-    if (search) params.set("search", search);
-    else params.delete("search");
-  }
+    const shouldUpdateURL =
+      !params.has("page") || !params.has("limit");
 
-  if (gender !== undefined) {
-    if (gender) params.set("gender", gender);
-    else params.delete("gender");
-  }
+    setSelectedGender(genderFromURL);
+    setSearchQuery(searchFromURL);
+    setCurrentPage(pageFromURL);
 
-  if (page !== undefined) {
-    if (page) params.set("page", page);
-    else params.delete("page");
-  }
+    if (shouldUpdateURL) {
+      updateURLParams({
+        search: searchFromURL,
+        gender: genderFromURL,
+        page: pageFromURL,
+      });
+    }
+  }, [location.search]);
 
-  params.set("limit", limit); // Always keep limit synced
-
-  navigate({ search: params.toString() });
-};
-
-
+  // Fetch data when filters change
   useEffect(() => {
     const controller = new AbortController();
+    let debounceTimer;
 
     const fetchData = async () => {
-      setLoading(true);
-      setError(null);
-
       try {
+        setLoading(true);
+        setError(null);
+     
 
-        const response = await axios.get(`${URL}/api/admin/instructors`, {
-       
-          params: {
-            search: searchQuery,
-            gender: selectedGender,
-            page: currentPage,
-            limit: limit,
-          },
+        const params = {};
+        if (searchQuery.trim()) params.search = searchQuery;
+        if (selectedGender) params.gender = selectedGender;
+        if (currentPage) params.page = currentPage;
+        if (limit) params.limit = limit;
+
+        const response = await axios.get(`${URL}/api/staff`, {
           withCredentials: true,
-          signal: searchQuery ? controller.signal : undefined,
+          params,
+          signal: searchQuery.trim() ? controller.signal : undefined,
         });
 
-        setInstructors(response.data.instructorsWithDecrypted);
+        setStaff(response.data.staffList || []);
+        setCurrentPage(response.data.currentPage || 1);
         setTotalPages(response.data.totalPages || 1);
+        
       } catch (error) {
-        if (axios.isCancel(error)) {
-          console.log("Request canceled");
+        if (axios.isCancel(error) || error.name === "CanceledError") {
+          console.log("Search request was cancelled");
         } else {
-          console.error("Error fetching instructors:", error);
+          console.error("Error fetching data:", error);
           setError(error.message);
           if (
             error.response &&
@@ -102,7 +100,7 @@ const updateURLParams = ({ search, gender, page }) => {
               error.response.data.message === "Credential Invalid or Expired Please Login Again")
           ) {
             setTimeout(() => {
-             clearAuthState()
+             clearAuthState();
               // navigate("/");
             }, 2000);
           }
@@ -113,44 +111,29 @@ const updateURLParams = ({ search, gender, page }) => {
     };
 
     if (searchQuery.trim()) {
-      const debounceTimer = setTimeout(() => {
-        fetchData();
-      }, 1000);
-
-      return () => {
-        clearTimeout(debounceTimer);
-        controller.abort();
-      };
+      debounceTimer = setTimeout(fetchData, 2000);
     } else {
       fetchData();
-      return () => {};
     }
+
+    return () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      if (searchQuery.trim()) controller.abort();
+    };
   }, [searchQuery, selectedGender, currentPage]);
-
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const searchFromURL = params.get("search") || "";
-    const genderFromURL = params.get("gender") || "";
-    const pageFromURL = parseInt(params.get("page")) || 1;
-
-    setSearchQuery(searchFromURL);
-    setSelectedGender(genderFromURL);
-    setCurrentPage(pageFromURL);
-    
-  }, [location.search]);
 
   const handleSearchChange = (e) => {
     const value = e.target.value;
     setSearchQuery(value);
-    updateURLParams({ search: value, gender: selectedGender, page: 1 });
     setCurrentPage(1);
+    updateURLParams({ search: value, gender: selectedGender, page: 1 });
   };
 
   const handleGenderChange = (e) => {
     const value = e.target.value;
     setSelectedGender(value);
-    updateURLParams({ search: searchQuery, gender: value, page: 1 });
     setCurrentPage(1);
+    updateURLParams({ search: searchQuery, gender: value, page: 1 });
   };
 
   const handlePageChange = (page) => {
@@ -160,14 +143,13 @@ const updateURLParams = ({ search, gender, page }) => {
     }
   };
 
+
   return (
     <div className="p-4">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
-        <h3 className="text-xl font-bold text-center md:text-left">
-          Instructor Details
-        </h3>
+        <h3 className="text-xl font-bold text-center md:text-left">Staff Details</h3>
         <button
-          onClick={() => navigate("/admin/instructor/new")}
+          onClick={() => navigate("/admin/staff/new")}
           className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition w-full md:w-auto"
         >
           Register
@@ -233,7 +215,7 @@ const updateURLParams = ({ search, gender, page }) => {
           <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
             <table className="w-full text-sm text-left text-gray-500">
               <thead className="text-sm text-gray-700 bg-gray-50">
-                <tr className="">
+                <tr>
                   <th className="px-6 py-4">S.No</th>
                   <th className="px-6 py-4">Profile</th>
                   <th className="px-6 py-4">Name</th>
@@ -243,19 +225,17 @@ const updateURLParams = ({ search, gender, page }) => {
                 </tr>
               </thead>
               <tbody>
-                {instructors && instructors.length > 0 ? (
-                  instructors.map((instructor, index) => (
+                {staff.length > 0 ? (
+                  staff.map((instructor, index) => (
                     <tr key={instructor._id} className="bg-white border-b">
                       <th className="px-6 py-4 font-medium text-gray-900">
-                        {index + 1}
+                        {(currentPage - 1) * limit + index + 1}
                       </th>
                       <td className="px-6 py-4">
                         <img
-                          src={`${URL}/api/image-proxy/${extractDriveFileId(
-                            instructor.photo
-                          )}`}
+                          src={`${URL}/api/image-proxy/${extractDriveFileId(instructor.photo)}`}
                           alt={`${instructor.fullName}'s profile`}
-                          className="w-16 h-16 rounded-full object-cover border shadow-sm"
+                          className="w-16 h-16 object-cover rounded-full border-2 border-white shadow-md"
                         />
                       </td>
                       <td className="px-6 py-4">{instructor.fullName}</td>
@@ -264,23 +244,13 @@ const updateURLParams = ({ search, gender, page }) => {
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2 mt-4">
                           <button
-                            type="button"
-                            onClick={() =>
-                              navigate(
-                                `/admin/instructor/${instructor._id}/view`
-                              )
-                            }
+                            onClick={() => navigate(`/admin/staff/${instructor._id}/view`)}
                             className="bg-gray-100 hover:bg-gray-200 px-2 py-1 rounded"
                           >
                             <i className="fa-solid fa-eye text-blue-600"></i>
                           </button>
                           <button
-                            type="button"
-                            onClick={() =>
-                              navigate(
-                                `/admin/instructor/${instructor._id}/edit`
-                              )
-                            }
+                            onClick={() => navigate(`/admin/staff/${instructor._id}/edit`)}
                             className="bg-gray-100 hover:bg-gray-200 px-2 py-1 rounded"
                           >
                             <i className="fa-solid fa-pen-to-square text-blue-600"></i>
@@ -292,7 +262,7 @@ const updateURLParams = ({ search, gender, page }) => {
                 ) : (
                   <tr>
                     <td colSpan="6" className="text-center py-8 text-red-600">
-                      Instructor not found.
+                      Staff not found.
                     </td>
                   </tr>
                 )}
@@ -300,7 +270,7 @@ const updateURLParams = ({ search, gender, page }) => {
             </table>
           </div>
 
-          {instructors && instructors.length > 0 && (
+          {staff.length > 0 && (
             <Pagination
               CurrentPage={currentPage}
               TotalPages={TotalPages}
@@ -313,4 +283,4 @@ const updateURLParams = ({ search, gender, page }) => {
   );
 };
 
-export default InstructorTable;
+export default StaffTable;

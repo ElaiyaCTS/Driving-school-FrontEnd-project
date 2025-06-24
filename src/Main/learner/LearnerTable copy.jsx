@@ -93,84 +93,8 @@ const LearnerTable = () => {
     setCurrentPage(parseInt(params.get("page")) || 1);
   }, [location.search]);
 
-  // useEffect(() => {
-  //   const controller = new AbortController();
-  //   const fetchData = async () => {
-  //     setLoading(true);
-  //     setError(null);
-
-  //     try {
-  //       const params = {
-  //         limit,
-  //         page: currentPage,
-  //       };
-
-  //       if (search.trim()) params.search = search.trim();
-  //       if (selectedGender) params.gender = selectedGender;
-
-  //       const isFromValid = moment(fromDate, "YYYY-MM-DD", true).isValid();
-  //       const isToValid = moment(toDate, "YYYY-MM-DD", true).isValid();
-
-  //       if (isFromValid && isToValid) {
-  //         params.fromdate = fromDate;
-  //         params.todate = toDate;
-  //       }
-
-  //       const response = await axios.get(`${URL}/api/user/learners`, {
-  //         params,
-  //         withCredentials: true,
-  //         signal: controller.signal,
-  //       });
-
-  //       setLearners(response.data.learners || []);
-  //       setTotalPages(response.data.totalPages || 1);
-  //     } catch (err) {
-  //        if (!axios.isCancel(err)) {
-  //           setError(err.response.data.message);
-  //       if (err.response &&(err.response.status === 401 ||err.response.data.message === "Credential Invalid or Expired Please Login Again")) {
-  //           setTimeout(() => {
-  //             clearAuthState();
-  //             // navigate("/");
-  //           }, 3000);
-  //         }
-  //       }
-  //     }
-  //     finally {
-  //       setLoading(false);
-  //     }
-  //   };
-
-  //   const isFromValid = moment(fromDate, "YYYY-MM-DD", true).isValid();
-  //   const isToValid = moment(toDate, "YYYY-MM-DD", true).isValid();
-  //   const bothDatesSelected = isFromValid && isToValid;
-  //   const bothDatesCleared = !fromDate && !toDate;
-
-  //   const shouldCallAPI =
-  //     search.trim() !== "" ||
-  //     selectedGender !== "" ||
-  //     bothDatesSelected ||
-  //     bothDatesCleared;
-
-  //   if (!shouldCallAPI) return;
-
-  //   if (debounceTimer.current) clearTimeout(debounceTimer.current);
-  //   debounceTimer.current = setTimeout(fetchData, search ? 2000 : 0);
-
-  //   return () => {
-  //     clearTimeout(debounceTimer.current);
-  //     controller.abort();
-  //   };
-  // }, [search, selectedGender, fromDate, toDate, currentPage]);
-
-    const controllerRef = useRef(null);
-
   useEffect(() => {
-    if (controllerRef.current) {
-      controllerRef.current.abort(); // cancel previous
-    }
     const controller = new AbortController();
-    controllerRef.current = controller;
-
     const fetchData = async () => {
       setLoading(true);
       setError(null);
@@ -201,19 +125,17 @@ const LearnerTable = () => {
         setLearners(response.data.learners || []);
         setTotalPages(response.data.totalPages || 1);
       } catch (err) {
-        if (!axios.isCancel(err)) {
-          setError(err?.response?.data?.message);
-          if (
-            err.response &&
-            (err.response.status === 401 ||
-              err.response.data.message === "Credential Invalid or Expired Please Login Again")
-          ) {
+         if (!axios.isCancel(err)) {
+            setError(err.response.data.message);
+        if (err.response &&(err.response.status === 401 ||err.response.data.message === "Credential Invalid or Expired Please Login Again")) {
             setTimeout(() => {
               clearAuthState();
+              // navigate("/");
             }, 3000);
           }
         }
-      } finally {
+      }
+      finally {
         setLoading(false);
       }
     };
@@ -231,14 +153,8 @@ const LearnerTable = () => {
 
     if (!shouldCallAPI) return;
 
-    clearTimeout(debounceTimer.current);
-
-    if (isPastedRef.current) {
-      isPastedRef.current = false;
-      fetchData(); // 👈 no debounce for paste
-    } else {
-      debounceTimer.current = setTimeout(fetchData, search ? 1500 : 0);
-    }
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    debounceTimer.current = setTimeout(fetchData, search ? 2000 : 0);
 
     return () => {
       clearTimeout(debounceTimer.current);
@@ -278,30 +194,26 @@ const LearnerTable = () => {
     setCurrentPage(1);
   };
 
- const handleToDateChange = (e) => {
-  const val = e.target.value;
+  const handleToDateChange = (e) => {
+    const val = e.target.value;
 
-  // If user clears To Date, also clear From Date
-  if (val === "") {
-    setToDate("");
-    setFromDate("");
-    updateURLParams({ search, gender: selectedGender, fromdate: "", todate: "", page: 1 });
+    if (!fromDate) {
+      setToDateWarning("Please select From Date first.");
+      return;
+    }
+
+    if (val === "") {
+      setToDate("");
+      updateURLParams({ search, gender: selectedGender, fromdate: fromDate, todate: "", page: 1 });
+      setCurrentPage(1);
+      return;
+    }
+
+    setToDateWarning("");
+    setToDate(val);
+    updateURLParams({ search, gender: selectedGender, fromdate: fromDate, todate: val, page: 1 });
     setCurrentPage(1);
-    return;
-  }
-
-  // Prevent selecting To Date without From Date
-  if (!fromDate) {
-    setToDateWarning("Please select From Date first.");
-    return;
-  }
-
-  setToDateWarning("");
-  setToDate(val);
-  updateURLParams({ search, gender: selectedGender, fromdate: fromDate, todate: val, page: 1 });
-  setCurrentPage(1);
-};
-
+  };
 
   const handlePageChange = (page) => {
     if (page < 1 || page > totalPages) return;

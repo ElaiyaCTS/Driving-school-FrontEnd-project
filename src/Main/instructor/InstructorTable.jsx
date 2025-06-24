@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect,useRef } from "react";
 import axios from "axios";
 import { URL } from "../../App";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -7,85 +7,99 @@ import { extractDriveFileId } from "../../Components/ImageProxyRouterFunction/fu
 import { useRole } from "../../Components/AuthContext/AuthContext"; // adjust path as needed
 
 const InstructorTable = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
+ const isPastedRef = useRef(false);
+
   const {role, user,setUser,setRole,clearAuthState} =  useRole();
 
-  const [instructors, setInstructors] = useState([]);
+   const navigate = useNavigate();
+  const location = useLocation();
 
+  const [instructors, setInstructors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [limit, setLimit] = useState(10);
+  const [limit] = useState(10);
   const [TotalPages, setTotalPages] = useState(1);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedGender, setSelectedGender] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
 
- 
-// On first load, if page or limit is missing in URL, add default values to URL
-useEffect(() => {
-  const params = new URLSearchParams(location.search);
-  let shouldUpdate = false;
+  const controllerRef = useRef(null);
 
-  if (!params.get("page")) {
-    params.set("page", "1");
-    shouldUpdate = true;
-  }
+  // Ensure default page and limit in URL
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    let shouldUpdate = false;
 
-  if (!params.get("limit")) {
-    params.set("limit", limit.toString());
-    shouldUpdate = true;
-  }
+    if (!params.get("page")) {
+      params.set("page", "1");
+      shouldUpdate = true;
+    }
 
-  if (shouldUpdate) {
-    navigate({ search: params.toString() }, { replace: true });
-  }
-}, [location.search]);
+    if (!params.get("limit")) {
+      params.set("limit", limit.toString());
+      shouldUpdate = true;
+    }
 
-const updateURLParams = ({ search, gender, page }) => {
-  const params = new URLSearchParams(location.search);
+    if (shouldUpdate) {
+      navigate({ search: params.toString() }, { replace: true });
+    }
+  }, [location.search, limit, navigate]);
 
-  if (search !== undefined) {
-    if (search) params.set("search", search);
-    else params.delete("search");
-  }
+  const updateURLParams = ({ search, gender, page }) => {
+    const params = new URLSearchParams(location.search);
 
-  if (gender !== undefined) {
-    if (gender) params.set("gender", gender);
-    else params.delete("gender");
-  }
+    if (search !== undefined) {
+      if (search) params.set("search", search);
+      else params.delete("search");
+    }
 
-  if (page !== undefined) {
-    if (page) params.set("page", page);
-    else params.delete("page");
-  }
+    if (gender !== undefined) {
+      if (gender) params.set("gender", gender);
+      else params.delete("gender");
+    }
 
-  params.set("limit", limit); // Always keep limit synced
+    if (page !== undefined) {
+      if (page) params.set("page", page);
+      else params.delete("page");
+    }
 
-  navigate({ search: params.toString() });
-};
+    params.set("limit", limit);
 
+    navigate({ search: params.toString() });
+  };
 
   useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const searchFromURL = params.get("search") || "";
+    const genderFromURL = params.get("gender") || "";
+    const pageFromURL = parseInt(params.get("page")) || 1;
+
+    setSearchQuery(searchFromURL);
+    setSelectedGender(genderFromURL);
+    setCurrentPage(pageFromURL);
+
+    if (controllerRef.current) {
+      controllerRef.current.abort();
+    }
+
     const controller = new AbortController();
+    controllerRef.current = controller;
 
     const fetchData = async () => {
       setLoading(true);
       setError(null);
 
       try {
-
         const response = await axios.get(`${URL}/api/admin/instructors`, {
-       
           params: {
-            search: searchQuery,
-            gender: selectedGender,
-            page: currentPage,
-            limit: limit,
+            search: searchFromURL,
+            gender: genderFromURL,
+            page: pageFromURL,
+            limit,
           },
           withCredentials: true,
-          signal: searchQuery ? controller.signal : undefined,
+          signal: controller.signal,
         });
 
         setInstructors(response.data.instructorsWithDecrypted);
@@ -99,11 +113,11 @@ const updateURLParams = ({ search, gender, page }) => {
           if (
             error.response &&
             (error.response.status === 401 ||
-              error.response.data.message === "Credential Invalid or Expired Please Login Again")
+              error.response.data.message ===
+                "Credential Invalid or Expired Please Login Again")
           ) {
             setTimeout(() => {
-             clearAuthState()
-              // navigate("/");
+              clearAuthState();
             }, 2000);
           }
         }
@@ -112,53 +126,43 @@ const updateURLParams = ({ search, gender, page }) => {
       }
     };
 
-    if (searchQuery.trim()) {
-      const debounceTimer = setTimeout(() => {
-        fetchData();
-      }, 1000);
+   const debounce = setTimeout(() => {
+  fetchData();
+  isPastedRef.current = false; // reset paste flag
+}, searchFromURL && !isPastedRef.current ? 1500 : 0);
 
-      return () => {
-        clearTimeout(debounceTimer);
-        controller.abort();
-      };
-    } else {
-      fetchData();
-      return () => {};
-    }
-  }, [searchQuery, selectedGender, currentPage]);
-
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const searchFromURL = params.get("search") || "";
-    const genderFromURL = params.get("gender") || "";
-    const pageFromURL = parseInt(params.get("page")) || 1;
-
-    setSearchQuery(searchFromURL);
-    setSelectedGender(genderFromURL);
-    setCurrentPage(pageFromURL);
-    
+    return () => {
+      clearTimeout(debounce);
+      controller.abort();
+    };
   }, [location.search]);
 
   const handleSearchChange = (e) => {
-    const value = e.target.value;
-    setSearchQuery(value);
-    updateURLParams({ search: value, gender: selectedGender, page: 1 });
-    setCurrentPage(1);
+    updateURLParams({
+      search: e.target.value,
+      gender: selectedGender,
+      page: 1,
+    });
   };
 
   const handleGenderChange = (e) => {
-    const value = e.target.value;
-    setSelectedGender(value);
-    updateURLParams({ search: searchQuery, gender: value, page: 1 });
-    setCurrentPage(1);
+    updateURLParams({
+      search: searchQuery,
+      gender: e.target.value,
+      page: 1,
+    });
   };
 
   const handlePageChange = (page) => {
     if (page >= 1 && page <= TotalPages) {
-      setCurrentPage(page);
-      updateURLParams({ search: searchQuery, gender: selectedGender, page });
+      updateURLParams({
+        search: searchQuery,
+        gender: selectedGender,
+        page,
+      });
     }
   };
+
 
   return (
     <div className="p-4">
@@ -198,6 +202,9 @@ const updateURLParams = ({ search, gender, page }) => {
             placeholder="Search..."
             value={searchQuery}
             onChange={handleSearchChange}
+            onPaste={() => {
+            isPastedRef.current = true;
+           }}
           />
         </div>
 

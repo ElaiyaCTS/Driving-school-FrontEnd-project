@@ -1,18 +1,19 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import { URL } from "../../App";
 import Pagination from "../../Components/Pagination";
-import { useRole } from "../../Components/AuthContext/AuthContext"; // adjust path as needed
+import { useRole } from "../../Components/AuthContext/AuthContext";
 
 const CourseTable = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const {role, user,setUser,setRole,clearAuthState} =  useRole();
+  const { role, user, setUser, setRole, clearAuthState } = useRole();
 
   const itemsPerPage = 10;
+  const skipNextChangeRef = useRef(false); // 🔁 Prevent double paste
+  const abortControllerRef = useRef(null); // 🛑 For AbortController
 
-  // Read query params
   const query = useMemo(() => {
     const params = new URLSearchParams(location.search);
     return {
@@ -29,7 +30,7 @@ const CourseTable = () => {
   const [errorMessage, setErrorMessage] = useState("");
   const [searchTerm, setSearchTerm] = useState(query.search);
 
-  // On first load: ensure required params exist & remove empty search
+  // URL Param validation on first load
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     let updated = false;
@@ -52,17 +53,21 @@ const CourseTable = () => {
     }
   }, []);
 
-  // Sync search/page state when query changes
   useEffect(() => {
     setSearchTerm(query.search);
     setCurrentPage(query.page);
   }, [query.search, query.page]);
 
-  // Fetch API
   useEffect(() => {
+    // Abort previous fetch
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
     const controller = new AbortController();
-    const signal = controller.signal;
+    abortControllerRef.current = controller;
 
+    const isPaste = skipNextChangeRef.current;
+    const debounceDelay = isPaste ? 0 : 1500;
     const debounceTimer = setTimeout(async () => {
       setLoading(true);
       try {
@@ -72,8 +77,8 @@ const CourseTable = () => {
         queryParams.set("limit", query.limit);
 
         const response = await axios.get(`${URL}/api/courses?${queryParams.toString()}`, {
-         withCredentials: true,
-          signal,
+          withCredentials: true,
+          signal: controller.signal,
         });
 
         setCourses(response.data.courses || []);
@@ -82,6 +87,7 @@ const CourseTable = () => {
         if (axios.isCancel(error) || error.name === "AbortError") return;
         console.error("Error fetching courses:", error);
         setErrorMessage("Failed to fetch courses");
+
         if (
           error.response &&
           (error.response.status === 401 ||
@@ -89,13 +95,13 @@ const CourseTable = () => {
         ) {
           return setTimeout(() => {
             clearAuthState();
-            // navigate("/");
           }, 2000);
         }
       } finally {
+        skipNextChangeRef.current = false;
         setLoading(false);
       }
-    }, 800); // debounce
+    }, debounceDelay);
 
     return () => {
       clearTimeout(debounceTimer);
@@ -104,6 +110,11 @@ const CourseTable = () => {
   }, [query.search, query.page, query.limit]);
 
   const handleSearchChange = (e) => {
+    if (skipNextChangeRef.current) {
+      skipNextChangeRef.current = false;
+      return;
+    }
+
     const value = e.target.value;
     setSearchTerm(value);
 
@@ -113,7 +124,22 @@ const CourseTable = () => {
     } else {
       params.delete("search");
     }
-    params.set("page", "1"); // Reset page on search
+    params.set("page", "1");
+    navigate({ pathname: location.pathname, search: `?${params.toString()}` });
+  };
+
+  const handleSearchPaste = (e) => {
+    e.preventDefault(); // Stop default paste behavior
+    const pastedText = e.clipboardData.getData("text");
+
+    if (!pastedText) return;
+
+    skipNextChangeRef.current = true; // Avoid next onChange
+    setSearchTerm(pastedText);
+
+    const params = new URLSearchParams(location.search);
+    params.set("search", pastedText);
+    params.set("page", "1");
     navigate({ pathname: location.pathname, search: `?${params.toString()}` });
   };
 
@@ -126,9 +152,7 @@ const CourseTable = () => {
   return (
     <div className="p-4">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
-        <h3 className="text-xl font-bold text-center md:text-left">
-          Course Details
-        </h3>
+        <h3 className="text-xl font-bold text-center md:text-left">Course Details</h3>
         <button
           onClick={() => navigate("/admin/Course/new")}
           className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition w-full md:w-auto"
@@ -159,14 +183,13 @@ const CourseTable = () => {
             placeholder="Search Course"
             value={searchTerm}
             onChange={handleSearchChange}
+            onPaste={handleSearchPaste}
           />
         </div>
       </div>
 
       {loading ? (
-        <div className="text-center py-5 text-blue-600 font-semibold text-lg">
-          Loading...
-        </div>
+        <div className="text-center py-5 text-blue-600 font-semibold text-lg">Loading...</div>
       ) : errorMessage ? (
         <p className="text-red-600 text-center py-5">{errorMessage}</p>
       ) : (
@@ -197,9 +220,7 @@ const CourseTable = () => {
                     <td className="px-4 py-2">{course.fee}</td>
                     <td className="px-6 py-4">
                       <button
-                        onClick={() =>
-                          navigate(`/admin/Course/${course._id}/edit`)
-                        }
+                        onClick={() => navigate(`/admin/Course/${course._id}/edit`)}
                         className="bg-gray-100 hover:bg-gray-200 px-2 py-1 rounded"
                       >
                         <i className="fa-solid fa-pen-to-square text-blue-600"></i>

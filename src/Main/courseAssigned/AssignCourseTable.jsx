@@ -1,13 +1,15 @@
-import { useState, useEffect } from "react";
+
+ import { useState, useEffect, useRef } from "react";
 import { URL } from "../../App";
 import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import Pagination from "../../Components/Pagination";
 import { extractDriveFileId } from "../../Components/ImageProxyRouterFunction/funtion.js";
-import { useRole } from "../../Components/AuthContext/AuthContext"; // adjust path as needed
+import { useRole } from "../../Components/AuthContext/AuthContext";
+
 const AssignCourseTable = () => {
   const navigate = useNavigate();
-  const {role, user,setUser,setRole,clearAuthState} =  useRole();
+  const { role, user, setUser, setRole, clearAuthState } = useRole();
   const location = useLocation();
   const [learners, setLearners] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -17,7 +19,8 @@ const AssignCourseTable = () => {
   const [statusOne, setStatusOne] = useState("");
   const [statusTwo, setStatusTwo] = useState("");
   const [loading, setLoading] = useState(true);
-
+  const abortRef = useRef(null);
+  const pasteTriggered = useRef(false);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -71,15 +74,17 @@ const AssignCourseTable = () => {
   }, [location.search]);
 
   useEffect(() => {
+    if (abortRef.current) {
+      abortRef.current.abort();
+    }
     const controller = new AbortController();
-    const { signal } = controller;
-    let debounceTimeout;
+    abortRef.current = controller;
 
     const fetchData = async () => {
       setLoading(true);
       try {
         const response = await axios.get(`${URL}/api/course-assigned`, {
-        withCredentials: true,
+          withCredentials: true,
           params: {
             search: search.length >= 3 ? search : undefined,
             statusOne: statusOne || undefined,
@@ -87,7 +92,7 @@ const AssignCourseTable = () => {
             page: currentPage,
             limit,
           },
-          signal: search.length >= 3 ? signal : undefined,
+          signal: controller.signal,
         });
 
         setLearners(response.data.assignments || []);
@@ -104,7 +109,6 @@ const AssignCourseTable = () => {
           ) {
             setTimeout(() => {
               clearAuthState();
-              // navigate("/");
             }, 2000);
           }
         }
@@ -114,13 +118,16 @@ const AssignCourseTable = () => {
     };
 
     if (search.length >= 3 || search.length === 0) {
-      debounceTimeout = setTimeout(fetchData, 2000);
+      if (pasteTriggered.current) {
+        pasteTriggered.current = false;
+        fetchData();
+      } else {
+        const timeout = setTimeout(fetchData, 1500);
+        return () => clearTimeout(timeout);
+      }
     }
 
-    return () => {
-      if (debounceTimeout) clearTimeout(debounceTimeout);
-      controller.abort();
-    };
+    return () => controller.abort();
   }, [search, currentPage, statusOne, statusTwo]);
 
   const handleSearchChange = (e) => {
@@ -128,6 +135,15 @@ const AssignCourseTable = () => {
     setSearch(value);
     setCurrentPage(1);
     updateURLParams({ search: value, statusOne, statusTwo, page: 1 });
+  };
+
+  const handleSearchPaste = (e) => {
+    e.preventDefault();
+    const pastedText = (e.clipboardData || window.clipboardData).getData("text").trim();
+    pasteTriggered.current = true;
+    setSearch(pastedText);
+    setCurrentPage(1);
+    updateURLParams({ search: pastedText, statusOne, statusTwo, page: 1 });
   };
 
   const handleStatusOneChange = (e) => {
@@ -173,6 +189,8 @@ const AssignCourseTable = () => {
             placeholder="Search"
             value={search}
             onChange={handleSearchChange}
+            onPaste={handleSearchPaste}
+            
           />
           <svg
             className="w-4 h-4 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2"

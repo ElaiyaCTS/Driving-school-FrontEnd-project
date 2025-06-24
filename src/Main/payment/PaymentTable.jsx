@@ -167,44 +167,57 @@ useEffect(() => {
   };
 
 
-
- const handleFromDateChange = (e) => {
+const handleFromDateChange = (e) => {
   const value = e.target.value;
 
   if (!value) {
     setFromDate("");
     setToDate("");
+    updateURLParams({
+      searchTerm,
+      paymentMethod,
+      fromDate: "",
+      toDate: "",
+      page: 1,
+    });
   } else {
     setFromDate(value);
     setToDate(""); // reset toDate if fromDate changes
-  }
-
-  setCurrentPage(1);
-
-  if (value && toDate) {
     updateURLParams({
       searchTerm,
       paymentMethod,
       fromDate: value,
-      toDate,
+      toDate: "",
       page: 1,
     });
   }
+
+  setCurrentPage(1);
 };
-
- 
-
 const handleToDateChange = (e) => {
   const value = e.target.value;
-  setToDate(value);
+
+  if (!value) {
+    setToDate("");
+    updateURLParams({
+      searchTerm,
+      paymentMethod,
+      fromDate:"",
+      toDate: "",
+      page: 1,
+    });
+  } else {
+    setToDate(value);
+    updateURLParams({
+      searchTerm,
+      paymentMethod,
+      fromDate,
+      toDate: value,
+      page: 1,
+    });
+  }
+
   setCurrentPage(1);
-  updateURLParams({
-    searchTerm,
-    paymentMethod,
-    fromDate,
-    toDate: value,
-    page: 1,
-  });
 };
 
 

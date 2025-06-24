@@ -1,6 +1,7 @@
 // Components/AuthContext/AuthContext
 import { createContext, useContext, useState, useEffect } from "react";
 import axios from "axios";
+import { useNavigate} from "react-router-dom";
 
 const RoleContext = createContext();
 
@@ -8,6 +9,7 @@ export const RoleProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [role, setRole] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+   const navigate= useNavigate()
 
  const clearAuthState = async () => {
   try {
@@ -21,7 +23,8 @@ export const RoleProvider = ({ children }) => {
   } finally {
     setUser(null);
     setRole(null);
-    window.location.href = "/"; // ← Ensure redirection works across tabs
+    // window.location.href = "/"; // ← Ensure redirection works across tabs
+    navigate("/")
   }
 };
 
