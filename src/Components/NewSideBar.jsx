@@ -1,5 +1,5 @@
 import { initFlowbite } from "flowbite";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect,useRef  } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   FaTachometerAlt,
@@ -15,6 +15,9 @@ import {
 import { useRole } from "./AuthContext/AuthContext";
 
 function NewSidebar({ isOpen, onClose }) {
+   const sidebarRef = useRef(null);
+
+
   useEffect(() => initFlowbite(), []);
   const { role, isLoading, clearAuthState } = useRole();
   const navigate = useNavigate();
@@ -55,11 +58,30 @@ function NewSidebar({ isOpen, onClose }) {
     }
   };
 
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      // Only close if sidebar is open AND click is outside
+      if (
+        isOpen &&
+        sidebarRef.current &&
+        !sidebarRef.current.contains(event.target)
+      ) {
+        onClose(); // trigger parent close
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isOpen, onClose]);
+
+
   if (isLoading || !role) return null;
 
   return (
     <>
-      <aside
+      <aside ref={sidebarRef}
         className={`fixed top-0 left-0 z-40 w-64 h-[100] bg-blue-600 transition-transform duration-300 transform ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         } md:translate-x-0 md:static`}
@@ -246,7 +268,7 @@ function NewSidebar({ isOpen, onClose }) {
             <li>
               <button
                 onClick={() => setShowLogoutModal(true)}
-                className="flex items-center hidden w-full p-2 text-white rounded-lg  text-start bg-blue-60 group md:hidden"
+                className="flex items-center hidden w-full p-2 text-white rounded-lg text-start bg-blue-60 group md:hidden"
               >
                 <FaSignOutAlt className="text-xl" />
                 <span className="flex-1 ms-5 whitespace-nowrap">Log Out</span>
