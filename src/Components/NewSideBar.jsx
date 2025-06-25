@@ -12,27 +12,22 @@ import {
   FaUserShield,
   FaSignOutAlt,
 } from "react-icons/fa";
-import { useRole } from "./AuthContext/AuthContext"; // adjust path as needed
+import { useRole } from "./AuthContext/AuthContext";
 
-
-
-function NewSidebar() {
+function NewSidebar({ isOpen, onClose }) {
   useEffect(() => initFlowbite(), []);
-  const {role,isLoading, setUser,setRole,clearAuthState} =  useRole();
-
+  const { role, isLoading, clearAuthState } = useRole();
   const navigate = useNavigate();
   const location = useLocation();
 
-const [showLogoutModal, setShowLogoutModal] = useState(false);
-
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [open, setOpen] = useState(false);
 
-useEffect(() => {
-  if (!isLoading && !role) {
-    navigate("/", { replace: true });
-  }
-}, [isLoading, role, navigate]);
-
+  useEffect(() => {
+    if (!isLoading && !role) {
+      navigate("/", { replace: true });
+    }
+  }, [isLoading, role, navigate]);
 
   useEffect(() => {
     if (location.pathname.startsWith("/admin/attendance")) {
@@ -42,147 +37,269 @@ useEffect(() => {
     }
   }, [location.pathname]);
 
-
-// With this corrected version (better formatting & readability):
-const isActive = (path, exact = false) => {
-  if (exact) {
-    return location.pathname === path
+  const isActive = (path, exact = false) => {
+    if (exact) {
+      return location.pathname === path
+        ? "bg-blue-700 text-white"
+        : "text-white dark:hover:bg-blue-800";
+    }
+    return location.pathname.startsWith(path)
       ? "bg-blue-700 text-white"
       : "text-white dark:hover:bg-blue-800";
-  }
-  return location.pathname.startsWith(path)
-    ? "bg-blue-700 text-white"
-    : "text-white dark:hover:bg-blue-800";
-};
+  };
 
-  if (isLoading) {
-    return (
-      <div className="w-full h-screen flex justify-center items-center bg-white">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-lg text-gray-600">Checking authentication...</p>
-        </div>
-      </div>
-    );
-  }
-if (!role) return null;
+  // 👇 Auto-close on mobile click
+  const handleLinkClick = () => {
+    if (window.innerWidth < 1024) {
+      onClose();
+    }
+  };
+
+  if (isLoading || !role) return null;
 
   return (
-    <React.Fragment>
+    <>
       <aside
-        id="logo-sidebar"
-        className="fixed inset-0 top-0 left-0 z-40 w-64 h-auto min-h-screen transition-transform transform -translate-x-full bg-blue-600 lg:static md:static lg:min-w-72 pt-28 md:translate-x-0"
-        tabIndex="-1"
-        aria-labelledby="logo-sidebar-label"
+        className={`fixed top-0 left-0 z-40 w-64 h-[100] bg-blue-600 transition-transform duration-300 transform ${
+          isOpen ? "translate-x-0" : "-translate-x-full"
+        } md:translate-x-0 md:static`}
       >
-        <div
-          id="logo-sidebar-label"
-          className="flex flex-col justify-between h-full px-3 pb-0 space-y-2 overflow-y-auto bg-blue-600 sm:pb-5 dark:bg-blue-800"
+        <button
+          onClick={onClose}
+          className="absolute text-xl text-white top-3 right-3 md:hidden"
         >
-          {(role === "admin" || role === "learner" || role === "instructor") && (
-            <>
-              <ul className="space-y-2 font-normal">
-                {role === "admin" && (
-                  <>
-                    <li><Link to="/admin/dashboard" className={`${isActive("/admin/dashboard")} flex items-center p-2 rounded-lg group`}><FaTachometerAlt className="text-xl" /><span className="ms-4">Dashboard</span></Link></li>
-                    <li><Link to="/admin/learner/list" className={`${isActive("/admin/learner")} flex items-center p-2 rounded-lg group`}><FaUser className="text-xl" /><span className="ms-4">Learner</span></Link></li>
-                    <li><Link to="/admin/instructor/list" className={`${isActive("/admin/instructor")} flex items-center p-2 rounded-lg group`}><FaChalkboardTeacher className="text-xl" /><span className="ms-4">Instructor</span></Link></li>
-                    <li><Link to="/admin/staff/list" className={`${isActive("/admin/staff")} flex items-center p-2 rounded-lg group`}><FaUserShield className="text-xl" /><span className="ms-4">Staff</span></Link></li>
-                    <li><Link to="/admin/Course/list" className={`${isActive("/admin/Course")} flex items-center p-2 rounded-lg group`}><FaBook className="text-xl" /><span className="ms-4">Course</span></Link></li>
-                    <li><Link to="/admin/course-assigned/list" className={`${isActive("/admin/course-assigned")} flex items-center p-2 rounded-lg group`}><FaClipboardCheck className="text-xl" /><span className="ms-4">Course-Assigned</span></Link></li>
+          ×
+        </button>
+
+        <div className="flex flex-col justify-between h-full px-3 pb-5 overflow-y-auto pt-28 dark:bg-blue-800">
+          <ul className="space-y-2 font-normal">
+            {role === "admin" && (
+              <>
+                <li>
+                  <Link
+                    to="/admin/dashboard"
+                    onClick={handleLinkClick}
+                    className={`${isActive("/admin/dashboard")} flex items-center p-2 rounded-lg group`}
+                  >
+                    <FaTachometerAlt className="text-xl" />
+                    <span className="ms-4">Dashboard</span>
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/admin/learner/list"
+                    onClick={handleLinkClick}
+                    className={`${isActive("/admin/learner")} flex items-center p-2 rounded-lg group`}
+                  >
+                    <FaUser className="text-xl" />
+                    <span className="ms-4">Learner</span>
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/admin/instructor/list"
+                    onClick={handleLinkClick}
+                    className={`${isActive("/admin/instructor")} flex items-center p-2 rounded-lg group`}
+                  >
+                    <FaChalkboardTeacher className="text-xl" />
+                    <span className="ms-4">Instructor</span>
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/admin/staff/list"
+                    onClick={handleLinkClick}
+                    className={`${isActive("/admin/staff")} flex items-center p-2 rounded-lg group`}
+                  >
+                    <FaUserShield className="text-xl" />
+                    <span className="ms-4">Staff</span>
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/admin/Course/list"
+                    onClick={handleLinkClick}
+                    className={`${isActive("/admin/Course")} flex items-center p-2 rounded-lg group`}
+                  >
+                    <FaBook className="text-xl" />
+                    <span className="ms-4">Course</span>
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/admin/course-assigned/list"
+                    onClick={handleLinkClick}
+                    className={`${isActive("/admin/course-assigned")} flex items-center p-2 rounded-lg group`}
+                  >
+                    <FaClipboardCheck className="text-xl" />
+                    <span className="ms-4">Course-Assigned</span>
+                  </Link>
+                </li>
+                <li>
+                  <button
+                    onClick={() => setOpen(!open)}
+                    className={`${isActive("/admin/attendance")} flex items-center w-full p-2 rounded-lg group`}
+                  >
+                    <FaClipboardCheck className="text-xl" />
+                    <span className="ms-4">Attendance</span>
+                    <svg
+                      className={`w-3 h-3 ms-auto transition-transform ${
+                        open ? "rotate-180" : ""
+                      }`}
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 10 6"
+                    >
+                      <path
+                        stroke="currentColor"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M1 1l4 4 4-4"
+                      />
+                    </svg>
+                  </button>
+                  <ul
+                    className={`${
+                      open ? "block" : "hidden"
+                    } py-2 pl-10 space-y-2`}
+                  >
                     <li>
-                      <button onClick={() => setOpen(!open)} className={`${isActive("/admin/attendance")} flex items-center w-full p-2 rounded-lg group`}>
-                        <FaClipboardCheck className="text-xl" /><span className="ms-4">Attendance</span>
-                        <svg className={`w-3 h-3 ms-auto transition-transform ${open ? "rotate-180" : ""}`} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6"><path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M1 1l4 4 4-4" /></svg>
-                      </button>
-                      <ul className={`${open ? "block" : "hidden"} py-2 pl-10 space-y-2`}>
-                        <li><Link to="/admin/attendance/learner/list" className={`${isActive("/admin/attendance/learner")} flex items-center p-2 rounded-lg group`}><FaUser className="text-xl" /><span className="ms-5">Learner</span></Link></li>
-                        <li><Link to="/admin/attendance/instructor/list" className={`${isActive("/admin/attendance/instructor")} flex items-center p-2 rounded-lg group`}><FaChalkboardTeacher className="text-xl" /><span className="ms-5">Instructor</span></Link></li>
-                        <li><Link to="/admin/attendance/staff/list" className={`${isActive("/admin/attendance/staff")} flex items-center p-2 rounded-lg group`}><FaUserShield className="text-xl" /><span className="ms-5">Staff</span></Link></li>
-                      </ul>
+                      <Link
+                        to="/admin/attendance/learner/list"
+                        onClick={handleLinkClick}
+                        className={`${isActive(
+                          "/admin/attendance/learner"
+                        )} flex items-center p-2 rounded-lg group`}
+                      >
+                        <FaUser className="text-xl" />
+                        <span className="ms-5">Learner</span>
+                      </Link>
                     </li>
-                    <li><Link to="/admin/payment/list" className={`${isActive("/admin/payment")} flex items-center p-2 rounded-lg group`}><FaMoneyCheckAlt className="text-xl" /><span className="ms-4">Payment</span></Link></li>
-                    <li><Link to="/admin/test-details/list" className={`${isActive("/admin/test-details")} flex items-center p-2 rounded-lg group`}><FaFileAlt className="text-xl" /><span className="ms-4">Test Details</span></Link></li>
-                  </>
-                )}
-                {role === "learner" && (
+                    <li>
+                      <Link
+                        to="/admin/attendance/instructor/list"
+                        onClick={handleLinkClick}
+                        className={`${isActive(
+                          "/admin/attendance/instructor"
+                        )} flex items-center p-2 rounded-lg group`}
+                      >
+                        <FaChalkboardTeacher className="text-xl" />
+                        <span className="ms-5">Instructor</span>
+                      </Link>
+                    </li>
+                    <li>
+                      <Link
+                        to="/admin/attendance/staff/list"
+                        onClick={handleLinkClick}
+                        className={`${isActive(
+                          "/admin/attendance/staff"
+                        )} flex items-center p-2 rounded-lg group`}
+                      >
+                        <FaUserShield className="text-xl" />
+                        <span className="ms-5">Staff</span>
+                      </Link>
+                    </li>
+                  </ul>
+                </li>
+                <li>
+                  <Link
+                    to="/admin/payment/list"
+                    onClick={handleLinkClick}
+                    className={`${isActive("/admin/payment")} flex items-center p-2 rounded-lg group`}
+                  >
+                    <FaMoneyCheckAlt className="text-xl" />
+                    <span className="ms-4">Payment</span>
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/admin/test-details/list"
+                    onClick={handleLinkClick}
+                    className={`${isActive("/admin/test-details")} flex items-center p-2 rounded-lg group`}
+                  >
+                    <FaFileAlt className="text-xl" />
+                    <span className="ms-4">Test Details</span>
+                  </Link>
+                </li>
+              </>
+            )}
+             {role === "learner" && (
                   <>
-                    <li><Link to="/learner/dashboard" className={`${isActive("/learner/dashboard")} flex items-center p-2 rounded-lg group`}><FaTachometerAlt className="text-xl" /><span className="ms-4">Dashboard</span></Link></li>
-                    <li><Link to="/learner/attendance" className={`${isActive("/learner/attendance")} flex items-center p-2 rounded-lg group`}><FaClipboardCheck className="text-xl" /><span className="ms-4">Attendance</span></Link></li>
-                    <li><Link to="/learner/payment" className={`${isActive("/learner/payment")} flex items-center p-2 rounded-lg group`}><FaMoneyCheckAlt className="text-xl" /><span className="ms-4">Payment</span></Link></li>
-                    <li><Link to="/learner/test-details" className={`${isActive("/learner/test-details")} flex items-center p-2 rounded-lg group`}><FaFileAlt className="text-xl" /><span className="ms-4">Test Details</span></Link></li>
-                    <li><Link to="/learner/Course" className={`${isActive("/learner/Course")} flex items-center p-2 rounded-lg group`}><FaBook className="text-xl" /><span className="ms-4">Course Details</span></Link></li>
-                    <li><Link to="/learner/profile" className={`${isActive("/learner/profile")} flex items-center p-2 rounded-lg group`}><FaUser className="text-xl" /><span className="ms-4">Profile</span></Link></li>
+                    
+                    <li><Link onClick={handleLinkClick}  to="/learner/dashboard" className={`${isActive("/learner/dashboard")} flex items-center p-2 rounded-lg group`}><FaTachometerAlt className="text-xl" /><span className="ms-4">Dashboard</span></Link></li>
+                    <li><Link onClick={handleLinkClick} to="/learner/attendance" className={`${isActive("/learner/attendance")} flex items-center p-2 rounded-lg group`}><FaClipboardCheck className="text-xl" /><span className="ms-4">Attendance</span></Link></li>
+                    <li><Link onClick={handleLinkClick} to="/learner/payment" className={`${isActive("/learner/payment")} flex items-center p-2 rounded-lg group`}><FaMoneyCheckAlt className="text-xl" /><span className="ms-4">Payment</span></Link></li>
+                    <li><Link onClick={handleLinkClick} to="/learner/test-details" className={`${isActive("/learner/test-details")} flex items-center p-2 rounded-lg group`}><FaFileAlt className="text-xl" /><span className="ms-4">Test Details</span></Link></li>
+                    <li><Link onClick={handleLinkClick} to="/learner/Course" className={`${isActive("/learner/Course")} flex items-center p-2 rounded-lg group`}><FaBook className="text-xl" /><span className="ms-4">Course Details</span></Link></li>
+                    <li><Link onClick={handleLinkClick} to="/learner/profile" className={`${isActive("/learner/profile")} flex items-center p-2 rounded-lg group`}><FaUser className="text-xl" /><span className="ms-4">Profile</span></Link></li>
                   </>
                 )}
                 {role === "instructor" && (
                   <>
-                    <li><Link to="/instructor/dashboard" className={`${isActive("/instructor/dashboard")} flex items-center p-2 rounded-lg group`}><FaTachometerAlt className="text-xl" /><span className="ms-4">Dashboard</span></Link></li>
-                    <li><Link to="/instructor/attendance/list" className={`${isActive("/instructor/attendance")} flex items-center p-2 rounded-lg group`}><FaClipboardCheck className="text-xl" /><span className="ms-4">Attendance</span></Link></li>
-                    <li><Link to="/instructor/payment/list" className={`${isActive("/instructor/payment")} flex items-center p-2 rounded-lg group`}><FaMoneyCheckAlt className="text-xl" /><span className="ms-4">Payment</span></Link></li>
-                    <li><Link to="/instructor/profile" className={`${isActive("/instructor/profile")} flex items-center p-2 rounded-lg group`}><FaUser className="text-xl" /><span className="ms-4">Profile</span></Link></li>
+                    <li><Link onClick={handleLinkClick} to="/instructor/dashboard" className={`${isActive("/instructor/dashboard")} flex items-center p-2 rounded-lg group`}><FaTachometerAlt className="text-xl" /><span className="ms-4">Dashboard</span></Link></li>
+                    <li><Link onClick={handleLinkClick} to="/instructor/attendance/list" className={`${isActive("/instructor/attendance")} flex items-center p-2 rounded-lg group`}><FaClipboardCheck className="text-xl" /><span className="ms-4">Attendance</span></Link></li>
+                    <li><Link onClick={handleLinkClick} to="/instructor/payment/list" className={`${isActive("/instructor/payment")} flex items-center p-2 rounded-lg group`}><FaMoneyCheckAlt className="text-xl" /><span className="ms-4">Payment</span></Link></li>
+                    <li><Link onClick={handleLinkClick} to="/instructor/profile" className={`${isActive("/instructor/profile")} flex items-center p-2 rounded-lg group`}><FaUser className="text-xl" /><span className="ms-4">Profile</span></Link></li>
                   </>
                 )}
-                <li>
+            <li>
               <button
-  onClick={() => setShowLogoutModal(true)}
-  className="flex items-center w-full p-2 text-white rounded-lg text-start bg-blue-60 group"
->
-  <FaSignOutAlt className="text-xl" />
-  <span className="flex-1 ms-5 whitespace-nowrap">Log Out</span>
-</button>
-
-                </li>
-              </ul>
-            </>
-          )}
+                onClick={() => setShowLogoutModal(true)}
+                className="flex items-center hidden w-full p-2 text-white rounded-lg  text-start bg-blue-60 group md:hidden"
+              >
+                <FaSignOutAlt className="text-xl" />
+                <span className="flex-1 ms-5 whitespace-nowrap">Log Out</span>
+              </button>
+            </li>
+          </ul>
         </div>
       </aside>
+
+      {/* 🔐 Logout Modal */}
       {showLogoutModal && (
-  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-    <div className="w-full max-w-md p-6 bg-white rounded-lg shadow-lg dark:bg-gray-700">
-      <div className="text-center">
-        <svg
-          className="w-12 h-12 mx-auto mb-4 text-gray-400 dark:text-gray-200"
-          aria-hidden="true"
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 20 20"
-        >
-          <path
-            stroke="currentColor"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="2"
-            d="M10 11V6m0 8h.01M19 10a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-          />
-        </svg>
-        <h3 className="mb-5 text-lg font-normal text-gray-800 dark:text-gray-400">
-          Are you sure you want to <span className="font-semibold">Log out?</span>
-        </h3>
-        <div className="flex justify-center gap-4">
-          <button
-            onClick={() => setShowLogoutModal(false)}
-            className="py-2.5 px-5 text-sm font-medium text-blue-600 bg-white rounded-lg border border-blue-600 hover:text-blue-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={() => {
-              setShowLogoutModal(false);
-              clearAuthState()
-              // setTimeout(() => ("/"), 100); // delay for smoother UX
-            }}
-            className="text-white bg-blue-600 hover:bg-blue-800 font-medium rounded-lg text-sm px-5 py-2.5"
-          >
-            Yes
-          </button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="w-full max-w-md p-6 bg-white rounded-lg shadow-lg dark:bg-gray-700">
+            <div className="text-center">
+              <svg
+                className="w-12 h-12 mx-auto mb-4 text-gray-400 dark:text-gray-200"
+                fill="none"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  stroke="currentColor"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M10 11V6m0 8h.01M19 10a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                />
+              </svg>
+              <h3 className="mb-5 text-lg font-normal text-gray-800 dark:text-gray-400">
+                Are you sure you want to{" "}
+                <span className="font-semibold">Log out?</span>
+              </h3>
+              <div className="flex justify-center gap-4">
+                <button
+                  onClick={() => setShowLogoutModal(false)}
+                  className="py-2.5 px-5 text-sm font-medium text-blue-600 bg-white border border-blue-600 rounded-lg hover:text-blue-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:text-white"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    setShowLogoutModal(false);
+                    clearAuthState();
+                  }}
+                  className="text-white bg-blue-600 hover:bg-blue-800 font-medium rounded-lg text-sm px-5 py-2.5"
+                >
+                  Yes
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
-  </div>
-   )}
-    </React.Fragment>
+      )}
+    </>
   );
 }
 

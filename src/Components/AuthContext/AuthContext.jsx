@@ -41,8 +41,11 @@ export const RoleProvider = ({ children }) => {
         console.warn("AuthContext: Not logged in or token expired");
         setUser(null);
         setRole(null);
+        navigate("/")
       } finally {
         setIsLoading(false);
+       
+
       }
     };
 
