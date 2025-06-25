@@ -82,7 +82,7 @@ function NewSidebar({ isOpen, onClose }) {
   return (
     <>
       <aside ref={sidebarRef}
-        className={`fixed top-0 left-0 z-40 w-64 h-[100] bg-blue-600 transition-transform duration-300 transform ${
+        className={`fixed top-0 left-0 z-40 w-64 h-100vh md:min-h-[100vh] bg-blue-600 transition-transform duration-300 transform ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         } md:translate-x-0 md:static`}
       >

@@ -163,13 +163,13 @@ function Navbar({ setSidebarOpen }) {
               <div className="flex justify-center gap-4">
                 <button
                   onClick={() => setShowLogoutModal(false)}
-                  className="py-2.5 px-5 text-sm font-medium text-blue-600 bg-white rounded-lg border border-blue-600 hover:text-blue-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700"
+                  className=" w-20 py-2.5 px-5 text-sm font-medium text-blue-600 bg-white rounded-lg border border-blue-600 hover:text-blue-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleLogoutConfirm}
-                  className="text-white bg-blue-600 hover:bg-blue-800 font-medium rounded-lg text-sm px-5 py-2.5"
+                  className="text-white bg-blue-600 hover:bg-blue-800 font-medium rounded-lg text-sm px-5 py-2.5 w-20"
                 >
                   Yes
                 </button>
@@ -192,7 +192,7 @@ function Navbar({ setSidebarOpen }) {
             <img
               src={`${URL}/api/image-proxy/${extractDriveFileId(isLogin.photo)}`}
               alt="Preview"
-              className="max-h-[80vh] max-w-[90vw] rounded-lg"
+               className="w-[300px] h-[400px] object-cover rounded-lg"
             />
             <div className="mt-3 text-center">
               <button
