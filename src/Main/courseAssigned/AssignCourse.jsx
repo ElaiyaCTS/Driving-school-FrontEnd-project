@@ -1,12 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { URL } from "../../App";
 import axios from "axios";
 import { extractDriveFileId } from "../../Components/ImageProxyRouterFunction/funtion.js";
-import { useRole } from "../../Components/AuthContext/AuthContext"; // adjust path as needed
+import { useRole } from "../../Components/AuthContext/AuthContext";
+
 const AssignCourse = () => {
   const navigate = useNavigate();
-  const {role, user,setUser,setRole,clearAuthState} =  useRole();
+  const { role, user, setUser, setRole, clearAuthState } = useRole();
   const [selectedCourse, setSelectedCourse] = useState("");
   const [selectedLearner, setSelectedLearner] = useState("");
   const [learners, setLearners] = useState([]);
@@ -16,15 +17,32 @@ const AssignCourse = () => {
   const [isCourseOpen, setIsCourseOpen] = useState(false);
   const [searchLearner, setSearchLearner] = useState("");
   const [searchCourse, setSearchCourse] = useState("");
+  const [dataloading, setDataLoading] = useState(false);
+
+  const learnerRef = useRef(null);
+  const courseRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (learnerRef.current && !learnerRef.current.contains(event.target)) {
+        setIsLearnerOpen(false);
+      }
+      if (courseRef.current && !courseRef.current.contains(event.target)) {
+        setIsCourseOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-       
-const config = { withCredentials: true };
+        const config = { withCredentials: true };
         const [learnersRes, coursesRes] = await Promise.all([
-          axios.get(`${URL}/api/user/learners`,config),
-          axios.get(`${URL}/api/courses`,config),
+          axios.get(`${URL}/api/user/learners`, config),
+          axios.get(`${URL}/api/courses`, config),
         ]);
 
         setLearners(
@@ -33,20 +51,21 @@ const config = { withCredentials: true };
             : []
         );
         setCourses(
-          Array.isArray(coursesRes.data.courses) ? coursesRes.data.courses : []
+          Array.isArray(coursesRes.data.courses)
+            ? coursesRes.data.courses
+            : []
         );
       } catch (error) {
-        if (error.name !== "AbortError") {
-          if (
-            error.response &&
-            (error.response.status === 401 ||
-              error.response.data.message === "Credential Invalid or Expired Please Login Again")
-          ) {
-            setTimeout(() => {
-             clearAuthState();
-              // navigate("/");
-            }, 2000);
-          }
+        if (
+          error.name !== "AbortError" &&
+          error.response &&
+          (error.response.status === 401 ||
+            error.response.data.message ===
+              "Credential Invalid or Expired Please Login Again")
+        ) {
+          setTimeout(() => {
+            clearAuthState();
+          }, 2000);
         }
       }
     };
@@ -56,40 +75,40 @@ const config = { withCredentials: true };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    setSuccess(false);   
+    setSuccess(false);
     const requestData = {
       learner: selectedLearner,
       course: [selectedCourse],
     };
 
     try {
-        const config = { withCredentials: true };
-
-      await axios.post(`${URL}/api/course-assigned`, requestData,config);
-
+      setDataLoading(true)
+      const config = { withCredentials: true };
+      await axios.post(`${URL}/api/course-assigned`, requestData, config);
       setSuccess(true);
       setTimeout(() => {
+        setDataLoading(false)
         setSuccess(false);
         navigate(-1);
       }, 1000);
     } catch (error) {
-      if (error.name !== "AbortError") {
-        if (
-          error.response &&
-          (error.response.status === 401 || error.response.data.message === "Credential Invalid or Expired Please Login Again")
-        ) {
-          setTimeout(() => {
-           clearAuthState();
-            // navigate("/");
-          }, 2000);
-        } 
+      if (
+        error.name !== "AbortError" &&
+        error.response &&
+        (error.response.status === 401 ||
+          error.response.data.message ===
+            "Credential Invalid or Expired Please Login Again")
+      ) {
+        setTimeout(() => {
+          clearAuthState();
+        }, 2000);
       }
     }
   };
 
-  const selectedLearnerDetails = Array.isArray(learners)
-    ? learners.find((learner) => learner._id === selectedLearner)
-    : null;
+  const selectedLearnerDetails = learners.find(
+    (learner) => learner._id === selectedLearner
+  );
 
   const filteredLearners = learners.filter((learner) =>
     learner.fullName.toLowerCase().includes(searchLearner.toLowerCase())
@@ -107,7 +126,8 @@ const config = { withCredentials: true };
       <form onSubmit={handleSubmit} className="w-full">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="md:col-span-2 flex flex-col gap-6">
-            <div className="relative w-full">
+            {/* Learner Dropdown */}
+            <div ref={learnerRef} className="relative w-full">
               <label
                 className={`absolute left-3 bg-white px-1 transition-all duration-200 pointer-events-none ${
                   selectedLearner || isLearnerOpen
@@ -126,7 +146,9 @@ const config = { withCredentials: true };
                     : "border border-gray-300 text-gray-700"
                 }`}
               >
-                {selectedLearnerDetails ? selectedLearnerDetails.fullName : "Choose a learner"}
+                {selectedLearnerDetails
+                  ? selectedLearnerDetails.fullName
+                  : ""}
               </button>
               {isLearnerOpen && (
                 <div className="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg">
@@ -162,6 +184,7 @@ const config = { withCredentials: true };
               )}
             </div>
 
+            {/* Learner Preview (Mobile) */}
             {selectedLearnerDetails && (
               <div className="block md:hidden w-full border p-4 rounded-md">
                 <div className="flex flex-col items-center gap-2">
@@ -182,7 +205,8 @@ const config = { withCredentials: true };
               </div>
             )}
 
-            <div className="relative w-full">
+            {/* Course Dropdown */}
+            <div ref={courseRef} className="relative w-full">
               <label
                 className={`absolute left-3 bg-white px-1 transition-all duration-200 pointer-events-none ${
                   selectedCourse || isCourseOpen
@@ -201,7 +225,8 @@ const config = { withCredentials: true };
                     : "border border-gray-300 text-gray-700"
                 }`}
               >
-                {courses.find((c) => c._id === selectedCourse)?.courseName || "Choose a course"}
+                {courses.find((c) => c._id === selectedCourse)?.courseName ||
+                  ""}
               </button>
               {isCourseOpen && (
                 <div className="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg">
@@ -238,6 +263,7 @@ const config = { withCredentials: true };
             </div>
           </div>
 
+          {/* Learner Preview (Desktop) */}
           {selectedLearnerDetails && (
             <div className="hidden md:flex flex-col items-center gap-3 border p-5 rounded-md shadow-sm">
               <img
@@ -257,20 +283,27 @@ const config = { withCredentials: true };
           )}
         </div>
 
-        <div className="flex flex-col md:flex-row md:justify-end space-y-4 md:space-y-0 md:space-x-4 mt-6">
-          <button
-            type="button"
-            onClick={() => navigate(-1)}
-            className="bg-gray-600 text-white px-6 py-2 rounded-md hover:bg-gray-800"
-          >
-            Back
-          </button>
-          <button
+          <div className="flex flex-col md:flex-row md:justify-end space-y-4 md:space-y-0 md:space-x-4 mt-6">
+        <button
+  onClick={() => navigate(-1)}
+  disabled={dataloading}
+  className={`bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-800 
+    ${dataloading ? "opacity-50 cursor-not-allowed" : ""}`}
+>
+  Back
+</button>
+   {dataloading? (<button disabled type="button" className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-800">
+<svg aria-hidden="true" role="status" className="inline w-4 h-4 me-3 text-white animate-spin" viewBox="0 0 100 101" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z" fill="#E5E7EB"/>
+<path d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z" fill="currentColor"/>
+</svg>Loading...</button>
+):( <button
             type="submit"
-            className="bg-blue-600 text-white px-6 py-3 rounded-md disabled:opacity-50"
+            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-800"
           >
             Save
-          </button>
+          </button>)}
+         
         </div>
       </form>
 

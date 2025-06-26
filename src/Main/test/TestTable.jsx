@@ -437,15 +437,16 @@ if (!value) {
               )}
             </tbody>
           </table>
-        </div>
-      )}
-      {totalPages  > 0 && (
+           {totalPages  > 0 && (
         <Pagination
           CurrentPage={currentPage}
           TotalPages={totalPages}
           onPageChange={handlePageChange}
         />
       )}
+        </div>
+      )}
+     
     </div>
   );
 };
