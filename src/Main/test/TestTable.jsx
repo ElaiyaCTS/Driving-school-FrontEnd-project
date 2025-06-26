@@ -58,8 +58,8 @@ const TestTable = () => {
         search: searchQuery || undefined,
         testType: testType || undefined,
         result: result || undefined,
-        fromDate: fromDate && toDate ? fromDate : undefined,
-        toDate: fromDate && toDate ? toDate : undefined,
+        fromdate: fromDate && toDate ? fromDate : undefined,
+        todate: fromDate && toDate ? toDate : undefined,
         page: currentPage,
         limit,
       };
@@ -69,6 +69,7 @@ const TestTable = () => {
         withCredentials: true,
       });
       setTests(response.data.tests || []);
+
       setTotalPages(response.data.totalPages || 1);
     } catch (error) {
       if (
@@ -438,7 +439,7 @@ if (!value) {
           </table>
         </div>
       )}
-      {tests.lenght > 0 && (
+      {totalPages  > 0 && (
         <Pagination
           CurrentPage={currentPage}
           TotalPages={totalPages}

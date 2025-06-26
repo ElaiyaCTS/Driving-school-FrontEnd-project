@@ -11,7 +11,7 @@ import { FaChevronDown, FaChevronUp, FaSignOutAlt } from "react-icons/fa";
 function Navbar({ setSidebarOpen }) {
   const { role, user, clearAuthState } = useRole();
   const navigate = useNavigate();
-
+const [img, setImg] = useState(null);
   const [isLogin, setIsLogin] = useState({ Name: null, photo: null });
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
@@ -98,6 +98,7 @@ function Navbar({ setSidebarOpen }) {
                   }
                   className="object-cover w-10 h-10 rounded-full shadow-sm cursor-pointer ring-2 ring-blue-500"
                   alt="user"
+                    onLoad={(e) => setImg(e.target.src)}
                   onClick={(e) => {
                     e.stopPropagation(); // don’t toggle dropdown
                     setShowImagePreview(true);
@@ -190,7 +191,7 @@ function Navbar({ setSidebarOpen }) {
             onClick={(e) => e.stopPropagation()}
           >
             <img
-              src={`${URL}/api/image-proxy/${extractDriveFileId(isLogin.photo)}`}
+              src={img}
               alt="Preview"
                className="w-[300px] h-[400px] object-cover rounded-lg"
             />
