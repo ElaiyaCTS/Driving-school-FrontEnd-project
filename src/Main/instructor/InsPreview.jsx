@@ -46,8 +46,12 @@ const {role, user,setUser,setRole,clearAuthState} =  useRole();
   useEffect(() => {
   }, [instructor]);
 
-  if (loading) {
-    return <div className="text-center text-lg">Loading...</div>;
+    if (loading) {
+    return (
+      <div className="p-10 text-center text-lg font-medium text-gray-600">
+        Loading Instructor details...
+      </div>
+    );
   }
 
   return (

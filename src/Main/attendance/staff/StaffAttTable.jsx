@@ -251,8 +251,9 @@ const handleFromDateChange = (e) => {
         </button>
       </div>
 
-      <div className="flex flex-col justify-between gap-4 mb-4 md:flex-row md:items-center">
-        <div className="relative w-full md:w-1/3">
+             <div className="flex flex-col gap-4 mb-4 lg:flex-row lg:items-center lg:justify-between">
+
+                   <div className="w-full lg:w-1/3">
           <svg
             className="absolute left-3 top-2.5 text-gray-400 w-5 h-5"
             fill="none"

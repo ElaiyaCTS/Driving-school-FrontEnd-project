@@ -158,97 +158,104 @@ useEffect(() => {
 
   return (
     <div className="p-4">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+      <div className="flex flex-col gap-4 mb-4 md:flex-row md:items-center md:justify-between">
         <h3 className="text-xl font-bold text-center md:text-left">
           Learner Attendance Details
         </h3>
         <button
           onClick={() => navigate("/admin/attendance/learner/mark")}
-          className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition w-full md:w-auto"
+          className="w-full px-4 py-2 text-white transition bg-blue-500 rounded-md hover:bg-blue-600 md:w-auto"
         >
           Mark
         </button>
       </div>
 
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
-         <div className="w-full md:w-1/3">
-          <div className="relative">
-            <div className="absolute inset-y-0 flex items-center pointer-events-none left-3">
-              <svg className="w-4 h-4 mr-2 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
-                <path
-                  stroke="currentColor"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z"
-                />
-              </svg>
-            </div>
-             <input
-          type="text"
-          placeholder="Search..."
-          className="w-full py-2 pl-10 text-sm text-gray-900 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500"
-
-          value={searchTerm}
-          onChange={handleSearchChange}
-        />
-            </div>
-          
-        </div>
-
-        <div className="flex flex-col sm:flex-row flex-wrap md:flex-nowrap gap-4 w-full md:w-auto md:justify-end">
-          <div className="relative w-full sm:w-36">
-            <select
-              id="floating_class"
-              className="peer block w-full text-sm text-gray-900 bg-transparent rounded-lg border border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-600 focus:border-blue-600 px-3 py-2"
-              value={classType}
-              onChange={handleClassTypeChange}
-            >
-              <option value="">All</option>
-              <option value="Theory">Theory</option>
-              <option value="Practical">Practical</option>
-            </select>
-            <label
-              htmlFor="floating_class"
-              className={`absolute text-xs left-3 top-[-8px] bg-white px-1 text-gray-500 peer-focus:text-blue-600 ${
-                classType ? "text-blue-600" : ""
-              }`}
-            >
-              Class Type
-            </label>
-          </div>
-
-          {/* From Date */}
-          <div className="relative w-full sm:w-40">
-            <input
-              type="date"
-              value={fromDate}
-              onChange={handleFromDateChange}
-              onFocus={(event) => (event.nativeEvent.target.defaultValue = "")}
-              className="peer border border-gray-300 text-gray-900 text-sm rounded-lg px-3 py-2 w-full"
-            />
-            <label className="absolute left-3 top-[-8px] text-xs bg-white px-1 text-gray-500">
-              From
-            </label>
-          </div>
-
-          {/* To Date */}
-          <div className="relative w-full sm:w-40">
-            <input
-              type="date"
-              value={toDate}
-              onChange={handleToDateChange}
-              className="peer border border-gray-300 text-gray-900 text-sm rounded-lg px-3 py-2 w-full"
-            />
-            <label className="absolute left-3 top-[-8px] text-xs bg-white px-1 text-gray-500">
-              To
-            </label>
-          </div>
-        </div>
+     <div className="flex flex-col gap-4 mb-4 lg:flex-row lg:items-center lg:justify-between">
+  {/* Search Field */}
+  <div className="w-full lg:w-1/3">
+    <div className="relative">
+      <div className="absolute inset-y-0 flex items-center pointer-events-none left-3">
+        <svg
+          className="w-4 h-4 mr-2 text-gray-500"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 20 20"
+        >
+          <path
+            stroke="currentColor"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="2"
+            d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z"
+          />
+        </svg>
       </div>
+      <input
+        type="text"
+        placeholder="Search..."
+        className="w-full py-2 pl-10 pr-3 text-sm text-gray-900 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500"
+        value={searchTerm}
+        onChange={handleSearchChange}
+      />
+    </div>
+  </div>
+
+  {/* Filters */}
+  <div className="flex flex-col gap-4 sm:flex-row sm:flex-nowrap lg:w-auto">
+    {/* Class Type */}
+    <div className="relative w-full sm:w-36">
+      <select
+        id="floating_class"
+        className="block w-full px-3 py-2 text-sm text-gray-900 bg-transparent border border-gray-300 rounded-lg peer focus:outline-none focus:ring-1 focus:ring-blue-600 focus:border-blue-600"
+        value={classType}
+        onChange={handleClassTypeChange}
+      >
+        <option value="">All</option>
+        <option value="Theory">Theory</option>
+        <option value="Practical">Practical</option>
+      </select>
+      <label
+        htmlFor="floating_class"
+        className={`absolute text-xs left-3 top-[-8px] bg-white px-1 text-gray-500 peer-focus:text-blue-600 ${
+          classType ? "text-blue-600" : ""
+        }`}
+      >
+        Class Type
+      </label>
+    </div>
+
+    {/* From Date */}
+    <div className="relative w-full sm:w-40">
+      <input
+        type="date"
+        value={fromDate}
+        onChange={handleFromDateChange}
+        onFocus={(event) => (event.nativeEvent.target.defaultValue = "")}
+        className="w-full px-3 py-2 text-sm text-gray-900 border border-gray-300 rounded-lg peer"
+      />
+      <label className="absolute left-3 top-[-8px] text-xs bg-white px-1 text-gray-500">
+        From
+      </label>
+    </div>
+
+    {/* To Date */}
+    <div className="relative w-full sm:w-40">
+      <input
+        type="date"
+        value={toDate}
+        onChange={handleToDateChange}
+        className="w-full px-3 py-2 text-sm text-gray-900 border border-gray-300 rounded-lg peer"
+      />
+      <label className="absolute left-3 top-[-8px] text-xs bg-white px-1 text-gray-500">
+        To
+      </label>
+    </div>
+  </div>
+</div>
+
 
       {loading ? (
-        <div className="text-center py-5 text-blue-600 font-semibold text-lg">
+        <div className="py-5 text-lg font-semibold text-center text-blue-600">
           Loading...
         </div>
       ) : (
@@ -282,7 +289,7 @@ useEffect(() => {
                             item.learner.photo
                           )}`}
                           alt={item.learner.fullName}
-                          className="w-16 h-16 object-cover rounded-full border-4 border-white shadow-md"
+                          className="object-cover w-16 h-16 border-4 border-white rounded-full shadow-md"
                         />
                       </td>
                       <td className="px-6 py-4">{item.learner.fullName}</td>
@@ -334,7 +341,7 @@ useEffect(() => {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="9" className="text-center text-red-600 py-4">
+                    <td colSpan="9" className="py-4 text-center text-red-600">
                       Attendance not found
                     </td>
                   </tr>

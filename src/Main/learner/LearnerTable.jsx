@@ -321,68 +321,72 @@ const LearnerTable = () => {
         </button>
       </div>
 
-      <div className="flex flex-col gap-4 mb-4 md:flex-row md:items-center md:justify-between">
-        <div className="w-full md:w-1/3">
-          <div className="relative">
-            <div className="absolute inset-y-0 flex items-center pointer-events-none left-3">
-              <i className="text-gray-500 fas fa-search"></i>
-            </div>
-            <input
-              type="search"
-              className="w-full py-2 pl-10 text-sm text-gray-900 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500"
-              placeholder="Search..."
-              value={search}
-              onChange={handleSearchChange}
-               onPaste={() => {
-            isPastedRef.current = true;
-           }}
-            />
-          </div>
-        </div>
-
-        <div className="flex flex-col w-full gap-4 sm:flex-row sm:items-center md:w-auto md:justify-end">
-          <div className="relative w-full sm:w-40">
-            <select
-              className="block w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-300 rounded-lg peer"
-              value={selectedGender}
-              onChange={handleGenderChange}
-            >
-              <option value="">All</option>
-              <option value="Male">Male</option>
-              <option value="Female">Female</option>
-              <option value="Others">Others</option>
-            </select>
-            <label className="absolute left-3 top-[-8px] text-xs bg-white px-1 text-gray-500">
-              Gender
-            </label>
-          </div>
-
-          <div className="relative w-full sm:w-40">
-            <input
-              type="date"
-              value={fromDate}
-              onChange={handleFromDateChange}
-              className="w-full px-3 py-2 text-sm text-gray-900 border border-gray-300 rounded-lg peer"
-            />
-            <label className="absolute left-3 top-[-8px] text-xs bg-white px-1 text-gray-500">From</label>
-          </div>
-
-          <div className="relative w-full sm:w-40">
-            <input
-              type="date"
-              value={toDate}
-              onChange={handleToDateChange}
-              min={fromDate || undefined}
-              disabled={!fromDate}
-              className="w-full px-3 py-2 text-sm text-gray-900 border border-gray-300 rounded-lg peer disabled:bg-gray-100 disabled:cursor-not-allowed"
-            />
-            <label className="absolute left-3 top-[-8px] text-xs bg-white px-1 text-gray-500">To</label>
-            {toDateWarning && (
-              <p className="mt-1 text-xs text-red-600">{toDateWarning}</p>
-            )}
-          </div>
-        </div>
+     <div className="flex flex-col gap-4 mb-4 lg:flex-row lg:items-center lg:justify-between">
+  {/* Search Bar */}
+  <div className="w-full lg:w-1/3">
+    <div className="relative">
+      <div className="absolute inset-y-0 flex items-center pointer-events-none left-3">
+        <i className="text-gray-500 fas fa-search"></i>
       </div>
+      <input
+        type="search"
+        placeholder="Search..."
+        value={search}
+        onChange={handleSearchChange}
+        onPaste={() => {
+          isPastedRef.current = true;
+        }}
+        className="w-full py-2 pl-10 pr-3 text-sm text-gray-900 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500"
+      />
+    </div>
+  </div>
+
+  {/* Filters: Gender, From, To */}
+  <div className="flex flex-col gap-4 sm:flex-row sm:flex-nowrap sm:items-center lg:w-auto">
+    {/* Gender Select */}
+    <div className="relative w-full sm:w-40">
+      <select
+        value={selectedGender}
+        onChange={handleGenderChange}
+        className="block w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-300 rounded-lg"
+      >
+        <option value="">All</option>
+        <option value="Male">Male</option>
+        <option value="Female">Female</option>
+        <option value="Others">Others</option>
+      </select>
+      <label className="absolute left-3 top-[-8px] text-xs bg-white px-1 text-gray-500">Gender</label>
+    </div>
+
+    {/* From Date */}
+    <div className="relative w-full sm:w-40">
+      <input
+        type="date"
+        value={fromDate}
+        onChange={handleFromDateChange}
+        className="w-full px-3 py-2 text-sm text-gray-900 border border-gray-300 rounded-lg"
+      />
+      <label className="absolute left-3 top-[-8px] text-xs bg-white px-1 text-gray-500">From</label>
+    </div>
+
+    {/* To Date */}
+    <div className="relative w-full sm:w-40">
+      <input
+        type="date"
+        value={toDate}
+        onChange={handleToDateChange}
+        min={fromDate || undefined}
+        disabled={!fromDate}
+        className="w-full px-3 py-2 text-sm text-gray-900 border border-gray-300 rounded-lg disabled:bg-gray-100 disabled:cursor-not-allowed"
+      />
+      <label className="absolute left-3 top-[-8px] text-xs bg-white px-1 text-gray-500">To</label>
+      {toDateWarning && (
+        <p className="mt-1 text-xs text-red-600">{toDateWarning}</p>
+      )}
+    </div>
+  </div>
+</div>
+
 
       {loading ? (
         <div className="py-5 text-lg font-semibold text-center text-blue-600">Loading...</div>

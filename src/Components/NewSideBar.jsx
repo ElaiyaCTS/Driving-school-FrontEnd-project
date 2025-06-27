@@ -82,7 +82,7 @@ function NewSidebar({ isOpen, onClose }) {
   return (
     <>
       <aside ref={sidebarRef}
-        className={`fixed top-0 left-0 z-40 w-64 h-100vh md:min-h-[100vh] bg-blue-600 transition-transform duration-300 transform ${
+        className={`fixed top-0 left-0 z-40 w-64 h-full min-h-screen   md:min-w-60 lg:min-w-72   bg-blue-600 transition-transform duration-300 transform ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         } md:translate-x-0 md:static`}
       >
@@ -114,7 +114,7 @@ function NewSidebar({ isOpen, onClose }) {
                     className={`${isActive("/admin/learner")} flex items-center p-2 rounded-lg group`}
                   >
                     <FaUser className="text-xl" />
-                    <span className="ms-4">Learner</span>
+                    <span className="ms-4">Learner </span>
                   </Link>
                 </li>
                 <li>
