@@ -1,920 +1,327 @@
-import { useState, useEffect } from "react";
+import React, { useState } from "react";
+import { useForm } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+import * as yup from "yup";
 import { URL as BURL } from "../../App";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { useRole } from "../../Components/AuthContext/AuthContext.jsx"; // adjust path as needed
+import { useRole } from "../../Components/AuthContext/AuthContext.jsx";
+
+const schema = yup.object().shape({
+  fullName: yup.string().required("Full Name is required."),
+  fathersName: yup.string().required("Father's Name is required."),
+  mobileNumber: yup.string().matches(/^[0-9]{10}$/, "Mobile Number must be 10 digits."),
+  dateOfBirth: yup.string().required("Date of Birth is required."),
+  gender: yup.string().required("Gender is required."),
+  bloodGroup: yup.string().required("Blood Group is required."),
+  address: yup.string().required("Address is required."),
+  licenseNumber: yup.string().required("License number is required."),
+  llrNumber: yup.string().required("LLR number is required."),
+  username: yup.string().required("Username is required."),
+  password: yup.string().required("Password is required."),
+  photo: yup
+  .mixed()
+  .required("Photo is required.")
+  .test("fileType", "Only image files are allowed", (value) => {
+    return (
+      value &&
+      value.length > 0 &&
+      value[0].type.startsWith("image/")
+    );
+  }),
+
+  signature: yup.mixed().required("Signature is required."),
+  aadharCard: yup.mixed().required("Aadhar Card is required."),
+  educationCertificate: yup.mixed().required("Education Certificate is required."),
+  passport: yup.mixed().required("Passport is required."),
+  notary: yup.mixed().required("Notary is required."),
+});
+
+const floatingInputClass =
+  "peer block w-full appearance-none border border-gray-300 bg-transparent px-2.5 pt-4 pb-2.5 text-sm text-gray-900 rounded-lg focus:outline-none focus:ring-0 focus:border-blue-500 dark:text-white dark:border-gray-600 dark:focus:border-blue-400";
+const floatingLabelClass =
+  "absolute start-1 z-10 origin-[0] scale-75 transform -translate-y-4 top-2 bg-white dark:bg-gray-900 px-2 text-sm text-gray-500 dark:text-gray-400 duration-300 peer-placeholder-shown:top-1/2 peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4 peer-focus:text-blue-500 peer-focus:dark:text-blue-400";
 
 const NewRegistration = () => {
   const navigate = useNavigate();
-  const {role, user,setUser,setRole,clearAuthState} =  useRole();
-console.log(user);
-
-  const [newLearner, setNewLearner] = useState({
-    fullName: "",
-    fathersName: "",
-    mobileNumber: "",
-    dateOfBirth: "",
-    gender: "",
-    bloodGroup: "",
-    address: "",
-    photo: null,
-    signature: null,
-    aadharCard: null,
-    educationCertificate: null,
-    passport: null,
-    notary: null,
-    licenseNumber: "",
-    llrNumber: "",
-    username: "",
-    password: "",
-  });
-
-  const [validationErrors, setValidationErrors] = useState({});
-  const [loading, setLoading] = useState(false);
-  const [validForm, setValidForm] = useState(false);
-  const [toastOpen, setToastOpen] = useState(false);
+  const { clearAuthState } = useRole();
   const [filePreviews, setFilePreviews] = useState({});
+  const [modalState, setModalState] = useState({});
+  const [toastOpen, setToastOpen] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setNewLearner((prev) => ({ ...prev, [name]: value }));
-  };
+  const {
+    register,
+    handleSubmit,
+    setValue,
+   trigger,
+    reset, 
+    formState: { errors },
+  } = useForm({ resolver: yupResolver(schema) });
 
-  const validateForm = () => {
-    const errors = {};
+  // const onSubmit = async (data) => {
+  //   const formData = new FormData();
+  //   Object.keys(data).forEach((key) => {
+  //     const value = data[key];
+  //     if (value instanceof FileList && value.length > 0) {
+  //       formData.append(key, value[0]);
+  //     } else {
+  //       formData.append(key, value);
+  //     }
+  //   });
+  //   formData.append("role", "Learner");
 
-    if (!newLearner.fullName) errors.fullName = "Full Name is required.";
-    if (!newLearner.fathersName)
-      errors.fathersName = "Father's Name is required.";
-    if (!newLearner.mobileNumber)
-      errors.mobileNumber = "Mobile Number is required.";
-    if (!/^\d{10}$/.test(newLearner.mobileNumber))
-      errors.mobileNumber = "Mobile Number must be 10 digits.";
-    if (!newLearner.dateOfBirth)
-      errors.dateOfBirth = "Date of Birth is required.";
-    if (!newLearner.gender) errors.gender = "Gender is required.";
-    if (!newLearner.bloodGroup) errors.bloodGroup = "Blood Group is required.";
-    if (!newLearner.address) errors.address = "Address is required.";
-    if (!newLearner.address)
-      errors.licenseNumber = "License number is required.";
-    if (!newLearner.address) errors.llrNumber = "LLR number is required.";
-    if (!newLearner.username) errors.username = "Username is required.";
-    if (!newLearner.password) errors.password = "Password is required.";
-    if (!newLearner.photo) errors.photo = "photo is required.";
-    if (!newLearner.signature) errors.signature = "signature is required.";
-    if (!newLearner.aadharCard) errors.aadharCard = "aadharCard is required.";
-    if (!newLearner.educationCertificate) errors.educationCertificate = "educationCertificate is required.";
-    if (!newLearner.passport) errors.passport = "passport is required.";
-    if (!newLearner.notary) errors.notary = "notary is required.";
+  //   try {
+  //     await axios.post(`${BURL}/api/admin/create-Learner`, formData, { withCredentials: true });
+      
+  //     setToastOpen(true);
+  //     setTimeout(() => {
+        
+  //       setToastOpen(false);
+  //       navigate(-1);
+  //     }, 1000);
+  //   } catch (err) {
+  //     if (err?.response?.status === 401) {
+  //       setTimeout(clearAuthState, 2000);
+  //     }
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+const onSubmit = async (data) => {
+  const formData = new FormData();
+  Object.keys(data).forEach((key) => {
+    const value = data[key];
+    if (value instanceof FileList && value.length > 0) {
+      formData.append(key, value[0]);
+    } else {
+      formData.append(key, value);
+    }
+  });
+  formData.append("role", "Learner");
 
-    return errors;
-  };
+  try {
+    setLoading(true)
+    await axios.post(`${BURL}/api/admin/create-Learner`, formData, {
+      withCredentials: true,
+    });
 
-  useEffect(() => {
-    setValidForm(validateForm());
-  }, [newLearner]);
+    // ✅ Clear form and files after success
+    reset();
+    setFilePreviews({});
+    setModalState({});
+    
+    setToastOpen(true);
+    setTimeout(() => {
+      setToastOpen(false);
+    setLoading(false)
+      navigate(-1);
+    }, 1000);
+  } catch (err) {
+  const message =
+    err?.response?.data?.message ||
+    err?.message ||
+    "Something went wrong. Please try again.";
 
-  const handleRegisterSubmit = async (e) => {
-    e.preventDefault();
+  setErrorMessage(message);
 
-    const errors = validateForm();
+  // Clear auth state if 401
+  if (err?.response?.status === 401) {
+   return setTimeout(clearAuthState, 2000);
+  }
+    setLoading(false)
 
-    if (Object.keys(errors).length > 0) {
-      setValidationErrors(errors);
+  // Hide error toast after 3 seconds
+  setTimeout(() => setErrorMessage(""), 3000);
+}
+};
+
+  const renderInput = (name, label, type = "text") => (
+    <div className="relative w-full">
+      <input type={type} id={name} placeholder=" " {...register(name)} className={floatingInputClass} />
+      <label htmlFor={name} className={floatingLabelClass}>{label}</label>
+      {errors[name] && <p className="mt-1 text-sm text-red-500">{errors[name].message}</p>}
+    </div>
+  );
+
+  const renderTextarea = (name, label) => (
+    <div className="relative w-full">
+      <textarea id={name} placeholder=" " {...register(name)} className={floatingInputClass + " resize-none h-24"} />
+      <label htmlFor={name} className={floatingLabelClass}>{label}</label>
+      {errors[name] && <p className="mt-1 text-sm text-red-500">{errors[name].message}</p>}
+    </div>
+  );
+
+  const renderSelect = (name, label, options) => (
+    <div className="relative w-full">
+      <select id={name} {...register(name)} className={floatingInputClass}>
+        <option value="" disabled hidden>Select an option</option>
+        {options.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
+      </select>
+      <label htmlFor={name} className={floatingLabelClass}>{label}</label>
+      {errors[name] && <p className="mt-1 text-sm text-red-500">{errors[name].message}</p>}
+    </div>
+  );
+
+  const renderFileInput = (fieldName, label, onlyImage = false) => {
+    
+      const previewObj = filePreviews[fieldName];
+    const file = previewObj?.file;
+    const previewUrl = previewObj?.url;
+    const isPDF = file?.type === "application/pdf";
+
+    const isModalOpen = modalState[fieldName] || false;
+
+    const openModal = () => setModalState(prev => ({ ...prev, [fieldName]: true }));
+    const closeModal = () => setModalState(prev => ({ ...prev, [fieldName]: false }));
+
+    // const handleFileChange = (e) => {
+    //   const files = e.target.files;
+    //   if (files?.length) {
+    //     const file = files[0];
+    //     const url = URL.createObjectURL(file);
+    //     setValue(fieldName, files);
+    //     setFilePreviews(prev => ({ ...prev, [fieldName]: { file, url } }));
+    //   }
+    // };
+
+
+    const handleFileChange = async (e) => {
+  const files = e.target.files;
+  if (files?.length) {
+    const file = files[0];
+
+    // Check for photo field and enforce image-only
+    if (onlyImage && !file.type.startsWith("image/")) {
+      setValue(fieldName, null);
+      await trigger(fieldName); // force re-validation
       return;
     }
 
-    setValidationErrors({});
+    const url = URL.createObjectURL(file);
+    setValue(fieldName, files);
+    setFilePreviews(prev => ({ ...prev, [fieldName]: { file, url } }));
+    await trigger(fieldName); // trigger yup re-validation after setting value
+  }
+};
 
-    setLoading(true);
-    const token = user
-
-    const formData = new FormData();
-    for (const key in newLearner) {
-      if (newLearner[key]) {
-        formData.append(key, newLearner[key]);
-      }
-    }
-    formData.append("role", "Learner");
-
-    for (let pair of formData.entries()) {
-      console.log(pair[0], pair[1]);
-    }
-
-    try {
-      await axios.post(`${BURL}/api/admin/create-Learner`, formData, {
-        withCredentials: true,
+    const handleRemove = () => {
+      setFilePreviews(prev => {
+        const updated = { ...prev };
+        delete updated[fieldName];
+        return updated;
       });
+      setValue(fieldName, null);
+      closeModal();
+    };
 
-      setToastOpen(true);
-      setTimeout(() => {
-        setToastOpen(false);
-        navigate(-1);
-      }, 1000);
-    } catch (error) {
-      if (error.name !== "AbortError") {
-        if (
-          error.response &&
-          (error.response.status === 401 ||
-            error.response.data.message === "Credential Invalid or Expired Please Login Again")
-        ) {
-          return setTimeout(() => {
-          clearAuthState();
-            // navigate("/");
-          }, 2000);
-        }
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
+    const acceptType = onlyImage ? "image/*" : "image/*,.pdf";
 
-  const getPreviewURL = (file) => {
-    if (!file) return null;
-    return typeof file === "string" ? file : URL.createObjectURL(file);
-  };
-
-  const handleFileUpload = (e) => {
-    const file = e.target.files[0];
-    const field = e.target.name;
-
-    if (file) {
-      const previewUrl = URL.createObjectURL(file);
-      setNewLearner((prev) => ({
-        ...prev,
-        [field]: file,
-      }));
-
-      setFilePreviews((prev) => ({
-        ...prev,
-        [field]: previewUrl,
-      }));
-    }
-  };
-
-  const removeFile = (field) => {
-    setNewLearner((prev) => ({
-      ...prev,
-      [field]: null,
-    }));
-  };
-
-  return (
-    <div className="p-4">
-      <h2 className="sm:text-3xl md:text-2xl font-semibold mb-4">
-        Learner Registration
-      </h2>
-
-      <h5 className="sm:text-2xl md:text-xl font-normal mb-4">
-        Personal Details
-      </h5>
-
-      <form onSubmit={handleRegisterSubmit}>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 gap-y-10">
-          <div className="relative w-full">
-            <input
-              type="text"
-              id="fullName"
-              name="fullName"
-              value={newLearner.fullName}
-              onChange={handleInputChange}
-              autoComplete="off"
-              className={`block px-2.5 pb-2.5 pt-4 w-full text-sm text-gray-900 bg-transparent rounded-lg border-1 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-400 focus:outline-none focus:ring-0 focus:border-blue-500 peer ${
-                validationErrors.username ? "border-red-500" : ""
-              }`}
-              placeholder=" "
-            />
-            <label
-              htmlFor="fullName"
-              className="absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white dark:bg-gray-900 px-2 peer-focus:px-2 peer-focus:text-blue-500 peer-focus:dark:text-blue-400 peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:top-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4 rtl:peer-focus:translate-x-1/4 rtl:peer-focus:left-auto start-1"
-            >
-              Full Name
-            </label>
-            {validationErrors.fullName && (
-              <p className="text-red-500 text-sm mt-1">
-                {validationErrors.fullName}
-              </p>
-            )}
-          </div>
-
-          <div className="relative w-full">
-            <input
-              type="text"
-              id="fathersName"
-              name="fathersName"
-              value={newLearner.fathersName}
-              onChange={handleInputChange}
-              autoComplete="off"
-              className="block w-full px-2.5 pb-2.5 pt-4 text-sm text-gray-900 bg-transparent border-1 border-gray-300 rounded-lg resize-none appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-500 peer"
-              placeholder=" "
-            />
-            <label
-              htmlFor="fathersName"
-              className="absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white dark:bg-gray-900 px-2 peer-focus:text-blue-500 peer-focus:dark:text-blue-400 peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:top-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4 start-1"
-            >
-              Father&apos; Name
-            </label>
-            {validationErrors.fathersName && (
-              <p className="text-red-500 text-sm mt-1">
-                {validationErrors.fathersName}
-              </p>
-            )}
-          </div>
-          <div className="relative w-full">
-            <input
-              type="text"
-              id="mobileNumber"
-              name="mobileNumber"
-              maxLength={10}
-              value={newLearner.mobileNumber}
-              onChange={handleInputChange}
-              autoComplete="off"
-              className="block w-full px-2.5 pb-2.5 pt-4 text-sm text-gray-900 bg-transparent border-1 border-gray-300 rounded-lg resize-none appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-500 peer"
-              placeholder=" "
-            />
-            <label
-              htmlFor="mobileNumber"
-              className="absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white dark:bg-gray-900 px-2 peer-focus:text-blue-500 peer-focus:dark:text-blue-400 peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:top-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4 start-1"
-            >
-              Mobile Number
-            </label>
-            {validationErrors.mobileNumber && (
-              <p className="text-red-500 text-sm mt-1">
-                {validationErrors.mobileNumber}
-              </p>
-            )}
-          </div>
-
-          <div className="relative w-full">
-            <input
-              type="date"
-              id="dateOfBirth"
-              name="dateOfBirth"
-              value={newLearner.dateOfBirth}
-              onChange={handleInputChange}
-              onFocus={(event) => (event.nativeEvent.target.defaultValue = "")}
-              className="block w-full px-2.5 pb-2.5 pt-4 text-sm text-gray-900 bg-transparent border-1 border-gray-300 rounded-lg resize-none appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-500 peer"
-              placeholder=" "
-            />
-            <label
-              htmlFor="dateOfBirth"
-              className="absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white dark:bg-gray-900 px-2 peer-focus:text-blue-500 peer-focus:dark:text-blue-400 peer-placeholder-shown:scale-100 peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4 start-1"
-            >
-              Date of Birth
-            </label>
-            {validationErrors.dateOfBirth && (
-              <p className="text-red-500 text-sm mt-1">
-                {validationErrors.dateOfBirth}
-              </p>
-            )}
-          </div>
-          <div className="relative w-full">
-            <select
-              id="gender"
-              name="gender"
-              value={newLearner.gender}
-              onChange={handleInputChange}
-              className="block w-full px-2.5 pb-2.5 pt-4 text-sm text-gray-900 bg-transparent border-1 border-gray-300 rounded-lg resize-none appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-500 peer"
-            >
-              <option value="" disabled hidden>
-                Select a gender
-              </option>
-              <option value="Male">Male</option>
-              <option value="Female">Female</option>
-              <option value="Other">Others</option>
-            </select>
-            <label
-              htmlFor="gender"
-              className="absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white dark:bg-gray-900 px-2 peer-focus:text-blue-500 peer-focus:dark:text-blue-400 peer-placeholder-shown:scale-100 peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4 start-1"
-            >
-              Gender
-            </label>
-            {validationErrors.gender && (
-              <p className="text-red-500 text-sm mt-1">
-                {validationErrors.gender}
-              </p>
-            )}
-          </div>
-          <div className="relative w-full">
-            <select
-              id="bloodGroup"
-              name="bloodGroup"
-              value={newLearner.bloodGroup}
-              onChange={handleInputChange}
-              className="block w-full px-2.5 pb-2.5 pt-4 text-sm text-gray-900 bg-transparent border-1 border-gray-300 rounded-lg resize-none appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-500 peer"
-            >
-              <option value="" disabled hidden>
-                Select Blood Group
-              </option>
-              {["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"].map(
-                (group) => (
-                  <option key={group} value={group}>
-                    {group}
-                  </option>
-                )
-              )}
-            </select>
-            <label
-              htmlFor="bloodGroup"
-              className="absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white dark:bg-gray-900 px-2 peer-focus:text-blue-500 peer-focus:dark:text-blue-400 peer-placeholder-shown:scale-100 peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4 start-1"
-            >
-              Blood Group
-            </label>
-            {validationErrors.bloodGroup && (
-              <p className="text-red-500 text-sm mt-1">
-                {validationErrors.bloodGroup}
-              </p>
-            )}
-          </div>
-
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              photo
-            </label>
-            <label
-              htmlFor="photo"
-              className="flex flex-col items-center justify-center w-full h-36 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer"
-            >
-              {newLearner.photo ? (
-                <img
-                  src={filePreviews.photo}
-                  alt="Uploaded Preview"
-                  className="w-full h-full object-contain rounded-lg"
-                />
-              ) : (
-                <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                  <svg
-                    className="w-8 h-8 mb-4 text-gray-500"
-                    aria-hidden="true"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 20 16"
-                  >
-                    <path
-                      stroke="currentColor"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"
-                    />
-                  </svg>
-                  <p className="mb-2 text-sm text-gray-500">
-                    <span className="font-semibold">Click to upload</span> or
-                    drag and drop
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    SVG, PNG, JPG or GIF (MAX. 800x400px)
-                  </p>
-                </div>
-              )}
-              <input
-                id="photo"
-                type="file"
-                name="photo"
-                className="hidden"
-                onChange={handleFileUpload}
-              />
-            </label>
-
-            {newLearner?.photo && (
-              <div className="mt-2 flex justify-between items-center">
-                <p className="text-sm">{newLearner.photo.name}</p>
-                <button
-                  type="button"
-                  onClick={() => removeFile("photo")}
-                  className="text-red-500 text-sm"
-                >
-                  Remove
-                </button>
-                
-              </div>
-            )}
-             {validationErrors.photo && (
-              <p className="text-red-500 text-sm mt-1">
-                {validationErrors.photo}
-              </p>
-            )}
-          </div>
-
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              signature
-            </label>
-            <label
-              htmlFor="signature"
-              className="flex flex-col items-center justify-center w-full h-36 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer"
-            >
-              {newLearner.signature ? (
-                <img
-                  src={filePreviews.signature}
-                  alt="Uploaded Preview"
-                  className="w-full h-full object-contain rounded-lg"
-                />
-              ) : (
-                <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                  <svg
-                    className="w-8 h-8 mb-4 text-gray-500"
-                    aria-hidden="true"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 20 16"
-                  >
-                    <path
-                      stroke="currentColor"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"
-                    />
-                  </svg>
-                  <p className="mb-2 text-sm text-gray-500">
-                    <span className="font-semibold">Click to upload</span> or
-                    drag and drop
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    SVG, PNG, JPG or GIF (MAX. 800x400px)
-                  </p>
-                </div>
-              )}
-              <input
-                id="signature"
-                type="file"
-                name="signature"
-                className="hidden"
-                onChange={handleFileUpload}
-              />
-            </label>
-
-            {newLearner?.signature && (
-              <div className="mt-2 flex justify-between items-center">
-                <p className="text-sm">{newLearner.signature.name}</p>
-                <button
-                  type="button"
-                  onClick={() => removeFile("signature")}
-                  className="text-red-500 text-sm"
-                >
-                  Remove
-                </button>
-              </div>
-            )}
-             {validationErrors.signature && (
-              <p className="text-red-500 text-sm mt-1">
-                {validationErrors.signature}
-              </p>
-            )}
-          </div>
-
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              aadharCard
-            </label>
-            <label
-              htmlFor="aadharCard"
-              className="flex flex-col items-center justify-center w-full h-36 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer"
-            >
-              {newLearner.aadharCard ? (
-                <img
-                  src={filePreviews.aadharCard}
-                  alt="Uploaded Preview"
-                  className="w-full h-full object-contain rounded-lg"
-                />
-              ) : (
-                <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                  <svg
-                    className="w-8 h-8 mb-4 text-gray-500"
-                    aria-hidden="true"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 20 16"
-                  >
-                    <path
-                      stroke="currentColor"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"
-                    />
-                  </svg>
-                  <p className="mb-2 text-sm text-gray-500">
-                    <span className="font-semibold">Click to upload</span> or
-                    drag and drop
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    SVG, PNG, JPG or GIF (MAX. 800x400px)
-                  </p>
-                </div>
-              )}
-              <input
-                id="aadharCard"
-                type="file"
-                name="aadharCard"
-                className="hidden"
-                onChange={handleFileUpload}
-              />
-            </label>
-
-            {newLearner?.aadharCard && (
-              <div className="mt-2 flex justify-between items-center">
-                <p className="text-sm">{newLearner.aadharCard.name}</p>
-                <button
-                  type="button"
-                  onClick={() => removeFile("aadharCard")}
-                  className="text-red-500 text-sm"
-                >
-                  Remove
-                </button>
-              </div>
-            )}
-             {validationErrors.aadharCard && (
-              <p className="text-red-500 text-sm mt-1">
-                {validationErrors.aadharCard}
-              </p>
-            )}
-          </div>
-
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              educationCertificate
-            </label>
-            <label
-              htmlFor="educationCertificate"
-              className="flex flex-col items-center justify-center w-full h-36 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer"
-            >
-              {newLearner.educationCertificate ? (
-                <img
-                  src={filePreviews.educationCertificate}
-                  alt="Uploaded Preview"
-                  className="w-full h-full object-contain rounded-lg"
-                />
-              ) : (
-                <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                  <svg
-                    className="w-8 h-8 mb-4 text-gray-500"
-                    aria-hidden="true"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 20 16"
-                  >
-                    <path
-                      stroke="currentColor"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"
-                    />
-                  </svg>
-                  <p className="mb-2 text-sm text-gray-500">
-                    <span className="font-semibold">Click to upload</span> or
-                    drag and drop
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    SVG, PNG, JPG or GIF (MAX. 800x400px)
-                  </p>
-                </div>
-              )}
-              <input
-                id="educationCertificate"
-                type="file"
-                name="educationCertificate"
-                className="hidden"
-                onChange={handleFileUpload}
-              />
-            </label>
-
-            {newLearner?.educationCertificate && (
-              <div className="mt-2 flex justify-between items-center">
-                <p className="text-sm">
-                  {newLearner.educationCertificate.name}
-                </p>
-                <button
-                  type="button"
-                  onClick={() => removeFile("educationCertificate")}
-                  className="text-red-500 text-sm"
-                >
-                  Remove
-                </button>
-              </div>
-            )}
-             {validationErrors.educationCertificate && (
-              <p className="text-red-500 text-sm mt-1">
-                {validationErrors.educationCertificate}
-              </p>
-            )}
-          </div>
-
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              passport
-            </label>
-            <label
-              htmlFor="passport"
-              className="flex flex-col items-center justify-center w-full h-36 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer"
-            >
-              {newLearner.passport ? (
-                <img
-                  src={filePreviews.passport}
-                  alt="Uploaded Preview"
-                  className="w-full h-full object-contain rounded-lg"
-                />
-              ) : (
-                <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                  <svg
-                    className="w-8 h-8 mb-4 text-gray-500"
-                    aria-hidden="true"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 20 16"
-                  >
-                    <path
-                      stroke="currentColor"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"
-                    />
-                  </svg>
-                  <p className="mb-2 text-sm text-gray-500">
-                    <span className="font-semibold">Click to upload</span> or
-                    drag and drop
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    SVG, PNG, JPG or GIF (MAX. 800x400px)
-                  </p>
-                </div>
-              )}
-              <input
-                id="passport"
-                type="file"
-                name="passport"
-                className="hidden"
-                onChange={handleFileUpload}
-              />
-            </label>
-
-            {newLearner?.passport && (
-              <div className="mt-2 flex justify-between items-center">
-                <p className="text-sm">{newLearner.passport.name}</p>
-                <button
-                  type="button"
-                  onClick={() => removeFile("passport")}
-                  className="text-red-500 text-sm"
-                >
-                  Remove
-                </button>
-              </div>
-            )}
-             {validationErrors.passport && (
-              <p className="text-red-500 text-sm mt-1">
-                {validationErrors.passport}
-              </p>
-            )}
-          </div>
-
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              notary
-            </label>
-            <label
-              htmlFor="notary"
-              className="flex flex-col items-center justify-center w-full h-36 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer"
-            >
-              {newLearner.notary ? (
-                <img
-                  src={filePreviews.notary}
-                  alt="Uploaded Preview"
-                  className="w-full h-full object-contain rounded-lg"
-                />
-              ) : (
-                <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                  <svg
-                    className="w-8 h-8 mb-4 text-gray-500"
-                    aria-hidden="true"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 20 16"
-                  >
-                    <path
-                      stroke="currentColor"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"
-                    />
-                  </svg>
-                  <p className="mb-2 text-sm text-gray-500">
-                    <span className="font-semibold">Click to upload</span> or
-                    drag and drop
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    SVG, PNG, JPG or GIF (MAX. 800x400px)
-                  </p>
-                </div>
-              )}
-              <input
-                id="notary"
-                type="file"
-                name="notary"
-                className="hidden"
-                onChange={handleFileUpload}
-              />
-            </label>
-
-            {newLearner?.notary && (
-              <div className="mt-2 flex justify-between items-center">
-                <p className="text-sm">{newLearner.notary.name}</p>
-                <button
-                  type="button"
-                  onClick={() => removeFile("notary")}
-                  className="text-red-500 text-sm"
-                >
-                  Remove
-                </button>
-              </div>
-            )}
-             {validationErrors.notary && (
-              <p className="text-red-500 text-sm mt-1">
-                {validationErrors.notary}
-              </p>
-            )}
-          </div>
-
-          <div className="relative">
-            <textarea
-              name="address"
-              value={newLearner.address}
-              onChange={handleInputChange}
-              placeholder=" "
-              className="block w-full h-24 px-2.5 pb-2.5 pt-4 text-sm text-gray-900 bg-transparent border-1 border-gray-300 rounded-lg resize-none appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-500 peer"
-            />
-            <label
-              htmlFor="address"
-              className="absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white dark:bg-gray-900 px-2 peer-focus:px-2 peer-focus:text-blue-500 peer-focus:dark:text-blue-400 peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:top-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4 rtl:peer-focus:translate-x-1/4 rtl:peer-focus:left-auto start-1"
-            >
-              Address
-            </label>
-            {validationErrors.address && (
-              <p className="text-red-500 text-sm">{validationErrors.address}</p>
-            )}
-          </div>
-        </div>
-
-        <div className="mt-8">
-          <h5 className="sm:text-2xl md:text-xl font-normal mb-4">
-            Additional Details
-          </h5>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 gap-y-10">
-            <div className="relative w-full">
-              <input
-                type="text"
-                id="licenseNumber"
-                name="licenseNumber"
-                value={newLearner.licenseNumber}
-                onChange={handleInputChange}
-                autoComplete="off"
-                className="block w-full px-2.5 pb-2.5 pt-4 text-sm text-gray-900 bg-transparent border-1 border-gray-300 rounded-lg resize-none appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-500 peer"
-                placeholder=" "
-              />
-              <label
-                htmlFor="licenseNumber"
-                className="absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white dark:bg-gray-900 px-2 peer-focus:text-blue-500 peer-focus:dark:text-blue-400 peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:top-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4 start-1"
-              >
-                License Number
-              </label>
-              {validationErrors.licenseNumber && (
-                <p className="text-red-500 text-sm mt-1">
-                  {validationErrors.licenseNumber}
-                </p>
-              )}
+    return (
+      <div className="mb-4">
+        <label className="block mb-1 text-sm font-medium text-gray-700 capitalize">{label}</label>
+        <label
+          htmlFor={fieldName}
+          className="flex flex-col items-center justify-center w-full overflow-hidden border-2 border-gray-300 border-dashed rounded-lg cursor-pointer h-36"
+        >
+          {file ? (
+            !onlyImage && isPDF ? (
+              <iframe src={previewUrl} className="w-full h-full border rounded" title="PDF Preview" />
+            ) : (
+              <img src={previewUrl} alt="Preview" className="object-contain w-full h-full rounded-lg" />
+            )
+          ) : (
+            <div className="flex flex-col items-center justify-center pt-5 pb-6">
+              <svg className="w-8 h-8 mb-4 text-gray-500" fill="none" viewBox="0 0 20 16">
+                <path stroke="currentColor" strokeWidth="2" d="M13 13h3a3 3 0 0 0 0-6A5.5 5.5 0 0 0 5 5a4 4 0 0 0 0 8h2M10 15V6m0 0L8 8m2-2 2 2" />
+              </svg>
+              <p className="mb-2 text-sm text-gray-500">Click to upload or drag and drop</p>
+              <p className="text-xs text-gray-500">Accepted: {acceptType}</p>
             </div>
-            <div>
-              <div className="relative w-full">
-                <input
-                  type="text"
-                  id="llrNumber"
-                  name="llrNumber"
-                  value={newLearner.llrNumber}
-                  onChange={handleInputChange}
-                  autoComplete="off"
-                  className="block w-full px-2.5 pb-2.5 pt-4 text-sm text-gray-900 bg-transparent border-1 border-gray-300 rounded-lg resize-none appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-500 peer"
-                  placeholder=" "
-                />
-                <label
-                  htmlFor="llrNumber"
-                  className="absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white dark:bg-gray-900 px-2 peer-focus:text-blue-500 peer-focus:dark:text-blue-400 peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:top-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4 start-1"
-                >
-                  LLR Number
-                </label>
-                {validationErrors.llrNumber && (
-                  <p className="text-red-500 text-sm mt-1">
-                    {validationErrors.llrNumber}
-                  </p>
+          )}
+          <input id={fieldName} type="file" name={fieldName} className="hidden" accept={acceptType} onChange={handleFileChange} />
+        </label>
+
+        {file && (
+          <div className="flex items-center justify-between mt-2">
+            <p className="text-sm truncate">{file.name}</p>
+            <div className="flex gap-2">
+              <button onClick={openModal} type="button" className="text-sm text-blue-600 hover:underline">View</button>
+              <button onClick={handleRemove} type="button" className="text-sm text-red-500 hover:underline">Remove</button>
+            </div>
+          </div>
+        )}
+
+        {isModalOpen && previewUrl && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+            <div className="relative w-11/12 max-w-2xl p-6 bg-white rounded-lg shadow-xl">
+              <button onClick={closeModal} className="absolute text-red-500 top-2 right-2 hover:text-gray-700">✕</button>
+              <div className="w-full h-[80vh] flex items-center justify-center">
+                {!onlyImage && isPDF ? (
+                  <iframe src={previewUrl} title="Preview" className="w-full h-full border rounded" />
+                ) : (
+                  <img src={previewUrl} alt="Preview" className="object-contain max-w-full max-h-full" />
                 )}
               </div>
             </div>
           </div>
-        </div>
+        )}
 
-        <div className="mt-8">
-          <h5 className="sm:text-2xl md:text-xl font-normal mb-4">
-            Login Details
-          </h5>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 gap-y-10">
-            <div className="relative w-full">
-              <input
-                type="text"
-                id="username"
-                name="username"
-                value={newLearner.username}
-                onChange={handleInputChange}
-                autoComplete="off"
-                className="block w-full px-2.5 pb-2.5 pt-4 text-sm text-gray-900 bg-transparent border-1 border-gray-300 rounded-lg resize-none appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-500 peer"
-                placeholder=" "
-              />
-              <label
-                htmlFor="username"
-                className="absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white dark:bg-gray-900 px-2 peer-focus:text-blue-500 peer-focus:dark:text-blue-400 peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:top-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4 start-1"
-              >
-                Username
-              </label>
-              {validationErrors.username && (
-                <p className="text-red-500 text-sm mt-1">
-                  {validationErrors.username}
-                </p>
-              )}
-            </div>
-            <div className="relative w-full">
-              <input
-                type="text"
-                id="password"
-                name="password"
-                value={newLearner.password}
-                onChange={handleInputChange}
-                autoComplete="off"
-                className="block w-full px-2.5 pb-2.5 pt-4 text-sm text-gray-900 bg-transparent border-1 border-gray-300 rounded-lg resize-none appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-500 peer"
-                placeholder=" "
-              />
-              <label
-                htmlFor="password"
-                className="absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white dark:bg-gray-900 px-2 peer-focus:text-blue-500 peer-focus:dark:text-blue-400 peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:top-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4 start-1"
-              >
-                Password
-              </label>
-              {validationErrors.password && (
-                <p className="text-red-500 text-sm mt-1">
-                  {validationErrors.password}
-                </p>
-              )}
-            </div>{" "}
+        {errors[fieldName] && <p className="mt-1 text-sm text-red-500">{errors[fieldName]?.message}</p>}
+      </div>
+    );
+  };
+
+  return (
+    <div className="p-4">
+      <h2 className="mb-4 text-2xl font-semibold">Learner Registration</h2>
+      <form onSubmit={handleSubmit(onSubmit)}>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          {renderInput("fullName", "Full Name")}
+          {renderInput("fathersName", "Father's Name")}
+          {renderInput("mobileNumber", "Mobile Number")}
+          {renderInput("dateOfBirth", "Date of Birth", "date")}
+          {renderSelect("gender", "Gender", ["Male", "Female", "Other"])}
+          {renderSelect("bloodGroup", "Blood Group", ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"])}
+          {renderFileInput("photo", "Photo", true)}
+          {renderFileInput("signature", "Signature")}
+          {renderFileInput("aadharCard", "Aadhar Card")}
+          {renderFileInput("educationCertificate", "Education Certificate")}
+          {renderFileInput("passport", "Passport")}
+          {renderFileInput("notary", "Notary")}
+
+        </div>
+   <div className="grid py-10 grid-row-1 md:grid-row-2 gap-y-10" >
+                    {renderTextarea("address", "Address")}
+          
           </div>
-        </div>
+                 
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 gap-y-10">
+      {renderInput("licenseNumber", "License Number")}
+          {renderInput("llrNumber", "LLR Number")}
+          {renderInput("username", "Username")}
+          {renderInput("password", "Password")}
+     </div>
+        <div className="flex justify-end mt-6">
+          <button disabled={loading} type="submit" className="px-4 py-2 text-white bg-blue-600 rounded hover:bg-blue-800">
+            {loading ? "Submitting..." : "Submit"}
+          </button>
 
-        <div className="flex flex-col md:flex-row md:justify-end space-y-4 md:space-y-0 md:space-x-4 mt-6">
-        <button
-  onClick={() => navigate(-1)}
-  disabled={loading}
-  className={`bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-800 
-    ${loading ? "opacity-50 cursor-not-allowed" : ""}`}
->
-  Back
-</button>
-   {loading? (<button disabled type="button" className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-800">
-<svg aria-hidden="true" role="status" className="inline w-4 h-4 me-3 text-white animate-spin" viewBox="0 0 100 101" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z" fill="#E5E7EB"/>
-<path d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z" fill="currentColor"/>
-</svg>Loading...</button>
-):( <button
-            type="submit"
-            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-800"
-          >
-            Submit
-          </button>)}
-         
+          
         </div>
       </form>
+
       {toastOpen && (
-        <div
-          id="toast-success"
-          className="fixed top-20 right-5 flex items-center justify-center w-full max-w-xs p-4 text-white bg-blue-700 rounded-md shadow-md"
-          role="alert"
-        >
-          <div className="inline-flex items-center justify-center shrink-0 w-8 h-8 text-green-700 bg-green-100 rounded-md dark:bg-green-800 dark:text-green-400">
-            <svg
-              className="w-5 h-5"
-              aria-hidden="true"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-            >
-              <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5Zm3.707 8.207-4 4a1 1 0 0 1-1.414 0l-2-2a1 1 0 0 1 1.414-1.414L9 10.586l3.293-3.293a1 1 0 0 1 1.414 1.414Z" />
-            </svg>
-            <span className="sr-only">Check icon</span>
-          </div>
-          <div className="ms-3 text-sm font-normal">
-            Learner created successfully
-          </div>
+        <div className="fixed px-4 py-2 text-white bg-blue-700 rounded shadow top-20 right-5">
+          Learner created successfully
         </div>
       )}
+      {errorMessage && (
+  <div className="fixed px-4 py-2 text-white bg-red-600 rounded shadow top-32 right-5">
+    {errorMessage}
+  </div>
+)}
     </div>
   );
 };
