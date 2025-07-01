@@ -50,7 +50,7 @@ const LearnerEdit = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const { data } = await axios.get(`${BURL}/api/admin/learner/${id}`, {
+        const { data } = await axios.get(`${BURL}/api/admin/get-learner/${id}`, {
           withCredentials: true,
         });
 
