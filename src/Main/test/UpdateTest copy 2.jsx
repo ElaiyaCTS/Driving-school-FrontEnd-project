@@ -1,47 +1,44 @@
+// ✅ Refactored UpdateTest with react-hook-form, Yup, custom error toast, loader handling, and 401 logic
+
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
+import { useNavigate, useParams } from "react-router-dom";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import axios from "axios";
-import { URL } from "../../App";
 import { extractDriveFileId } from "../../Components/ImageProxyRouterFunction/funtion.js";
 import { useRole } from "../../Components/AuthContext/AuthContext";
+import { URL } from "../../App";
 
 const schema = yup.object().shape({
-  testDate: yup.string().required("Date is required"),
-  result: yup.string().required("Result is required"),
+  date: yup.string().required("Test date is required"),
+  result: yup.string().oneOf(["Pass", "Fail", "Scheduled"], "Invalid result").required("Result is required"),
 });
 
 const UpdateTest = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { clearAuthState } = useRole();
-
-  const [toastOpen, setToastOpen] = useState(false);
   const [learners, setLearners] = useState([]);
   const [learnerId, setLearnerId] = useState("");
-  const [selectedTest, setSelectedTest] = useState("");
+  const [selectedTestType, setSelectedTestType] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [toastOpen, setToastOpen] = useState(false);
   const [errorMessages, setErrorMessages] = useState([]);
-  const [initialValues, setInitialValues] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [selectedResult, setSelectedResult] = useState("");
 
   const resultOptions = ["Pass", "Fail", "Scheduled"];
+
+  const formatDate = (isoDate) => (isoDate ? isoDate.split("T")[0] : "");
 
   const {
     register,
     handleSubmit,
     reset,
     setValue,
-    getValues,
     formState: { errors },
-  } = useForm({
-    resolver: yupResolver(schema),
-  });
-
-  const selectedLearnerDetails = learners.find((l) => l._id === learnerId);
-  const formatDate = (isoDate) => (isoDate ? isoDate.split("T")[0] : "");
+  } = useForm({ resolver: yupResolver(schema) });
 
   useEffect(() => {
     const fetchLearners = async () => {
@@ -52,17 +49,14 @@ const UpdateTest = () => {
         setLearners(response.data.learners || []);
       } catch (error) {
         if (
-          error?.response?.status === 401 ||
-          error?.response?.data?.message ===
-            "Credential Invalid or Expired Please Login Again"
+          error.response?.status === 401 ||
+          error.response?.data?.message === "Credential Invalid or Expired Please Login Again"
         ) {
           return setTimeout(() => {
             clearAuthState();
             navigate("/");
           }, 2000);
         }
-        setErrorMessages([error.message || "Failed to fetch learners"]);
-        setTimeout(() => setErrorMessages([]), 4000);
       }
     };
     fetchLearners();
@@ -74,63 +68,40 @@ const UpdateTest = () => {
         const res = await axios.get(`${URL}/api/tests/ById/${id}`, {
           withCredentials: true,
         });
-
         const test = res.data.test;
-        setLearnerId(test.learnerId?._id || "");
         setSearchTerm(test.learnerId?.fullName || "");
-        setSelectedTest(test.testType || "");
-
-        const init = {
-          testDate: formatDate(test.date),
-          result: test.result,
-        };
-
-        setInitialValues(init);
-        setValue("testDate", init.testDate);
-        setValue("result", init.result);
-      } catch (error) {
-        if (
-          error?.response?.status === 401 ||
-          error?.response?.data?.message ===
-            "Credential Invalid or Expired Please Login Again"
-        ) {
+        setLearnerId(test.learnerId?._id || "");
+        setSelectedTestType(test.testType || "");
+        setValue("date", formatDate(test.date));
+        setValue("result", test.result);
+      } catch (err) {
+        if (err.response?.status === 401 || err.response?.data?.message === "Invalid token") {
           return setTimeout(() => {
             clearAuthState();
             navigate("/");
-          }, 2000);
+          }, 3000);
         }
-        setErrorMessages([error.message || "Failed to fetch test"]);
-        setTimeout(() => setErrorMessages([]), 4000);
       }
     };
     if (id) fetchTest();
-  }, [id]);
+  }, [id, setValue]);
 
   const onSubmit = async (data) => {
-    const hasChanged =
-      initialValues?.testDate !== data.testDate ||
-      initialValues?.result !== data.result;
-
-    if (!hasChanged) {
-      setErrorMessages(["No changes detected. Please modify before updating."]);
-      return setTimeout(() => setErrorMessages([]), 4000);
-    }
-
+    setLoading(true);
     try {
-      setLoading(true);
-      await axios.put(
-        `${URL}/api/tests/${id}`,
-        {
-          learnerId,
-          testType: selectedTest,
-          date: data.testDate,
-          result: data.result,
-        },
-        { withCredentials: true }
-      );
+      const updated = {
+        learnerId,
+        testType: selectedTestType,
+        date: data.date,
+        result: data.result,
+      };
 
-      reset();
+      await axios.put(`${URL}/api/tests/${id}`, updated, {
+        withCredentials: true,
+      });
+
       setToastOpen(true);
+      reset();
       setTimeout(() => {
         setToastOpen(false);
         navigate(-1);
@@ -138,14 +109,14 @@ const UpdateTest = () => {
     } catch (error) {
       if (
         error?.response?.status === 401 ||
-        error?.response?.data?.message ===
-          "Credential Invalid or Expired Please Login Again"
+        error?.response?.data?.message === "Credential Invalid or Expired Please Login Again"
       ) {
         return setTimeout(() => {
           clearAuthState();
           navigate("/");
         }, 2000);
       }
+
       const errorMsg = error?.response?.data?.errors || error?.message || "An error occurred";
       const messages = Array.isArray(errorMsg) ? errorMsg : [errorMsg];
       setErrorMessages(messages);
@@ -155,51 +126,56 @@ const UpdateTest = () => {
     }
   };
 
+  const selectedLearnerDetails = learners.find((l) => l._id === learnerId);
+
   return (
     <div className="p-4 sm:p-6">
       <h2 className="mb-4 font-semibold sm:text-3xl md:text-2xl">Update Test Details</h2>
-
-      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col h-full gap-6">
-        <div className="flex flex-col flex-grow gap-6 lg:flex-row">
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-6">
+        <div className="flex flex-col gap-6 lg:flex-row">
           <div className="flex flex-col w-full gap-4 text-sm lg:w-3/4">
             <div className="relative w-full">
-              <input
-                type="text"
-                value={searchTerm}
-                disabled
-                className="peer border border-gray-300 text-gray-800 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full px-3 pt-4 pb-1.5"
-              />
-              <label className="absolute z-10 px-2 text-sm text-gray-500 duration-300 transform scale-75 -translate-y-4 bg-white top-2 left-2">
-                Learner name
-              </label>
-            </div>
+  <input
+    type="text"
+    id="learner"
+    value={searchTerm}
+    disabled
+    placeholder=" " // Important for peer-placeholder-shown to work
+    className="peer border border-gray-300 text-gray-800 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full px-3 pt-4 pb-1.5"
+  />
+  <label
+    htmlFor="learner"
+    className="absolute text-sm text-gray-500 bg-white px-1 transition-all duration-200 transform scale-75 -translate-y-3 top-1.5 left-2 peer-placeholder-shown:scale-100 peer-placeholder-shown:top-3.5 peer-placeholder-shown:translate-y-0 peer-focus:top-1.5 peer-focus:scale-75 peer-focus:-translate-y-3 peer-focus:text-blue-600"
+  >
+    Learner name
+  </label>
+</div>
 
             <div className="relative w-full">
-              <input
-                type="text"
-                value={selectedTest}
-                disabled
-                className="peer border border-gray-300 text-gray-800 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full px-3 pt-4 pb-1.5"
-              />
-              <label className="absolute z-10 px-2 text-sm text-gray-500 duration-300 transform scale-75 -translate-y-4 bg-white top-2 left-2">
-                Test type
-              </label>
-            </div>
+  <input
+    type="text"
+    id="testType"
+    value={selectedTestType}
+    disabled
+    placeholder=" "
+    className="peer border border-gray-300 text-gray-800 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full px-3 pt-4 pb-1.5"
+  />
+  <label
+    htmlFor="testType"
+    className="absolute text-sm text-gray-500 bg-white px-1 transition-all duration-200 transform scale-75 -translate-y-3 top-1.5 left-2 peer-placeholder-shown:scale-100 peer-placeholder-shown:top-3.5 peer-placeholder-shown:translate-y-0 peer-focus:top-1.5 peer-focus:scale-75 peer-focus:-translate-y-3 peer-focus:text-blue-600"
+  >
+    Test type
+  </label>
+</div>
 
             <div className="relative w-full">
+              <label className="absolute px-2 text-sm text-gray-500 bg-white top-2 left-2">Date</label>
               <input
                 type="date"
-                id="testDate"
-                {...register("testDate")}
+                {...register("date")}
                 className="w-full px-4 py-2 border border-gray-300 rounded-md peer"
               />
-              <label
-                htmlFor="testDate"
-                className="absolute z-10 px-2 text-sm text-gray-500 duration-300 transform scale-75 -translate-y-4 bg-white top-2 left-2"
-              >
-                Date
-              </label>
-              {errors.testDate && <p className="mt-1 text-sm text-red-600">{errors.testDate.message}</p>}
+              {errors.date && <p className="mt-1 text-sm text-red-500">{errors.date.message}</p>}
             </div>
 
             <div>
@@ -211,13 +187,15 @@ const UpdateTest = () => {
                       type="radio"
                       value={res}
                       {...register("result")}
-                      className="w-5 h-5 text-blue-600 border-gray-300 focus:ring-blue-500"
+                      checked={res === (selectedResult || undefined)}
+                      onChange={() => setSelectedResult(res)}
+                      className="w-4 h-4"
                     />
-                    <span className="text-gray-700">{res}</span>
+                    <span>{res}</span>
                   </label>
                 ))}
+                {errors.result && <p className="mt-1 text-sm text-red-500">{errors.result.message}</p>}
               </div>
-              {errors.result && <p className="mt-1 text-sm text-red-600">{errors.result.message}</p>}
             </div>
           </div>
 
@@ -226,25 +204,19 @@ const UpdateTest = () => {
               <div className="w-full p-4 border rounded-md">
                 <div className="flex flex-col items-center gap-2">
                   <img
-                    src={`${URL}/api/image-proxy/${extractDriveFileId(
-                      selectedLearnerDetails.photo
-                    )}`}
+                    src={`${URL}/api/image-proxy/${extractDriveFileId(selectedLearnerDetails.photo)}`}
                     alt={selectedLearnerDetails.fullName}
                     className="w-16 h-16 border rounded-full"
                   />
-                  <p className="text-sm font-semibold">
-                    {selectedLearnerDetails.fullName}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    ID: {selectedLearnerDetails.admissionNumber}
-                  </p>
+                  <p className="text-sm font-semibold">{selectedLearnerDetails.fullName}</p>
+                  <p className="text-sm text-gray-600">ID: {selectedLearnerDetails.admissionNumber}</p>
                 </div>
               </div>
             )}
           </div>
         </div>
 
-        <div className="flex flex-col mt-6 space-y-4 md:flex-row md:justify-end md:space-y-0 md:space-x-4">
+        <div className="flex justify-end gap-4 mt-6">
           <button
             type="button"
             onClick={() => navigate(-1)}
@@ -254,8 +226,8 @@ const UpdateTest = () => {
           </button>
           <button
             type="submit"
-            className="px-4 py-2 text-white bg-blue-500 rounded-md hover:bg-blue-600"
             disabled={loading}
+            className={`bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-800 ${loading ? "opacity-50 cursor-not-allowed" : ""}`}
           >
             {loading ? "Updating..." : "Update"}
           </button>
@@ -273,6 +245,7 @@ const UpdateTest = () => {
         </div>
       )}
 
+      {/* ❌ Error Toasts */}
       {errorMessages.length > 0 && (
         <div className="fixed z-50 w-full max-w-xs space-y-2 top-32 right-5">
           {errorMessages.map((msg, i) => (

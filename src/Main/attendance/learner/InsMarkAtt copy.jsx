@@ -1,77 +1,39 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { jwtDecode } from "jwt-decode";
 import { useNavigate } from "react-router-dom";
-import { useForm } from "react-hook-form";
-import { yupResolver } from "@hookform/resolvers/yup";
-import * as yup from "yup";
 import { URL } from "../../../App";
 import { extractDriveFileId } from "../../../Components/ImageProxyRouterFunction/funtion.js";
-import { useRole } from "../../../Components/AuthContext/AuthContext";
+import {useRole } from "../../../Components/AuthContext/AuthContext"
 
-const schema = yup.object().shape({
-selectedLearner: yup
-    .string()
-    .required("Please select a learner"),
-  assignedCourses: yup
-    .string()
-    .required("Please select a course"),
-  classType: yup
-    .string()
-    .required("Please select class type"),
-  date: yup.string().required("Date is required"),
-  checkIn: yup.string().required("Check-in time is required"),
-  checkOut: yup
-    .string()
-    .required("Check-out time is required")
-    .test("is-after", "Check-out must be after check-in", function (value) {
-      const { checkIn } = this.parent;
-      return !checkIn || !value || checkIn < value;
-    }),
-  description: yup.string(),
-});
-
-const MarkLearner = () => {
-  const { role, clearAuthState } = useRole();
+const InsMarkAtt = () => {
+ const {role, user,setUser,setRole,clearAuthState} =  useRole();
   const navigate = useNavigate();
-
+  
   const [learners, setLearners] = useState([]);
   const [assignedCourses, setAssignedCourses] = useState([]);
   const [selectedLearner, setSelectedLearner] = useState("");
   const [selectedLearnerDetails, setSelectedLearnerDetails] = useState(null);
+  const [isLearnerOpen, setIsLearnerOpen] = useState(false);
   const [searchLearner, setSearchLearner] = useState("");
+  //   const [isCourseOpen, setIsCourseOpen] = useState(false);
+  // const [courseSearch, setCourseSearch] = useState("");
+
   const [courseError, setCourseError] = useState("");
   const [selectedAssignedCourseId, setSelectedAssignedCourseId] = useState("");
   const [selectedAssignedId, setSelectedAssignedId] = useState("");
   const [classType, setClassType] = useState("");
+  const [date, setDate] = useState("");
+  const [checkIn, setCheckIn] = useState("");
+  const [checkOut, setCheckOut] = useState("");
   const [selectedOption, setSelectedOption] = useState("");
+  const [description, setDescription] = useState("");
+  const [isOpen, setIsOpen] = useState(false);
+  const [errors, setErrors] = useState({});
   const [toastOpen, setToastOpen] = useState(false);
-  const [toastError, setToastError] = useState([]);
-  const [isLearnerOpen, setIsLearnerOpen] = useState(false);
   const [isCourseDropdownOpen, setIsCourseDropdownOpen] = useState(false);
   const [isClassDropdownOpen, setIsClassDropdownOpen] = useState(false);
-  const [isOpen, setIsOpen] = useState(false);
-  const [apiError, setApiError] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [errorMessages, setErrorMessages] = useState([]);
-
-
-  const {
-    register,
-    handleSubmit,
-    setValue,
-    formState: { errors },
-    reset,
-  } = useForm({
-    resolver: yupResolver(schema),
-  });
-
-  useEffect(() => {
-    setValue("selectedLearner", selectedLearner);
-    setValue("assignedCourses", selectedAssignedCourseId);
-    setValue("classType", classType);
-  }, [selectedLearner, selectedAssignedCourseId, classType, setValue]);
-
-
+  
   useEffect(() => {
     const fetchLearners = async () => {
       try {
@@ -80,20 +42,48 @@ const MarkLearner = () => {
         });
         setLearners(res.data.learners);
       } catch (err) {
-        if (!axios.isCancel(err)) {
-          if (
-            err.response &&
-            (err.response.status === 401 ||
-              err.response.data.message === "Invalid token")
-          ) {
-            setTimeout(() => clearAuthState(), 3000);
+         if (!axios.isCancel(err)) {
+            // setError(err.response.data.message);
+        if (err.response &&(err.response.status === 401 ||err.response.data.message === "Invalid token")) {
+            setTimeout(() => {
+              clearAuthState();
+              // navigate("/");
+            }, 3000);
+          }
+        }
+      }
+    };
+    const fetchCourseTypes = async () => {
+     
+      let id;
+      if (user) {
+       
+        id = user.user_id;
+      } else {
+        // console.error("No token found");
+      }
+
+      try {
+        const res = await axios.get(`${URL}/api/course-assigned/${id}`, {
+          withCredentials: true,
+        });
+        setAssignedCourses(res.data.assignments);
+      }catch (err) {
+         if (!axios.isCancel(err)) {
+            // setError(err.response.data.message);
+        if (err.response &&(err.response.status === 401 ||err.response.data.message === "Invalid token")) {
+            setTimeout(() => {
+              clearAuthState();
+              // navigate("/");
+            }, 3000);
           }
         }
       }
     };
 
     fetchLearners();
-  }, [role]);
+    fetchCourseTypes();
+  }, [user]);
 
   const handleLearnerChange = async (learnerId) => {
     const selected = learners.find((l) => l._id === learnerId);
@@ -105,60 +95,68 @@ const MarkLearner = () => {
 
     if (learnerId) {
       try {
-        const res = await axios.get(`${URL}/api/course-assigned/${learnerId}`, {
-          withCredentials: true,
-        });
+        const res = await axios.get(
+          `${URL}/api/course-assigned/${learnerId}`,
+          {
+           withCredentials: true,
+          }
+        );
         const assignments = res.data.assignments;
-        if (!assignments || assignments.length === 0) {
+
+       if (!assignments || assignments.length === 0 ) {
           setCourseError("No course assigned for this learner");
           setAssignedCourses([]);
         } else {
+          setCourseError("");
           setAssignedCourses(assignments);
-        }
-      } catch (err) {
-        if (!axios.isCancel(err)) {
-          if (
-            err.response &&
-            (err.response.status === 401 ||
-              err.response.data.message === "Invalid token")
-          ) {
-            setTimeout(() => clearAuthState(), 3000);
+        } } catch (err) {
+         if (!axios.isCancel(err)) {
+            // setError(err.response.data.message);
+        if (err.response &&(err.response.status === 401 ||err.response.data.message === "Invalid token")) {
+            setTimeout(() => {
+              clearAuthState();
+              // navigate("/");
+            }, 3000);
           }
         }
       }
     }
   };
 
-  const onSubmit = async (data) => {
-//     console.log(selectedLearner);
-    
-//    if (!selectedLearner || !selectedAssignedCourseId || !classType) {
-//   const newErrors = {};
-//   if (!selectedLearner) newErrors.selectedLearner = { message: "Please select a learner" };
-//   if (!selectedAssignedCourseId) newErrors.assignedCourses = { message: "Please select a course" };
-//   if (!classType) newErrors.classType = { message: "Please select class type" };
+  const validateForm = () => {
+    const newErrors = {};
 
-//   setToastError(newErrors);
-//   // setTimeout(() => setToastError({}), 4000);
-//   return;
-// }
+    if (!selectedLearner) newErrors.selectedLearner = "Please select a learner";
+    if (!selectedAssignedCourseId)
+      newErrors.selectedAssignedCourseId = "Please select a course";
+    if (!classType) newErrors.classType = "Please select class type";
+    if (!date) newErrors.date = "Please select a date";
+    if (!checkIn) newErrors.checkIn = "Please enter check-in time";
+    if (!checkOut) newErrors.checkOut = "Please enter check-out time";
+    if (checkIn && checkOut && checkIn >= checkOut) {
+      newErrors.checkOut = "Check-out must be after check-in";
+    }
 
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
-    setApiError("");
-    setLoading(true);
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    if (!validateForm()) return;
 
     try {
-      const checkInDate = new Date(`${data.date}T${data.checkIn}:00`);
-      const checkOutDate = new Date(`${data.date}T${data.checkOut}:00`);
+      const checkInDate = new Date(`${date}T${checkIn}:00`);
+      const checkOutDate = new Date(`${date}T${checkOut}:00`);
 
       const requestBody = {
         learner: selectedLearner,
         courseType: selectedAssignedCourseId,
         classType,
-        date: data.date,
+        date,
         checkIn: checkInDate,
         checkOut: checkOutDate,
-        descriptions: data.description,
+        descriptions: description,
       };
 
       if (selectedOption === "ready-to-test") {
@@ -178,53 +176,29 @@ const MarkLearner = () => {
       }
 
       await axios.post(`${URL}/api/learner-attendance`, requestBody, {
-        withCredentials: true,
+    withCredentials: true,
       });
 
       setToastOpen(true);
-      // reset();
-      setSelectedLearner("");
-      setSelectedLearnerDetails(null);
-      setSelectedAssignedCourseId("");
-      setClassType("");
-      setSelectedOption("");
-
       setTimeout(() => {
         setToastOpen(false);
         navigate(-1);
       }, 1000);
     } catch (error) {
-  const status = error?.response?.status;
-  const message = error?.response?.data?.message;
-
-  if (
-    status === 401 ||
-    message === "Credential Invalid or Expired Please Login Again"
-  ) {
-    return setTimeout(() => {
-      clearAuthState();
-      navigate("/");
-    }, 2000);
-  }
-
-  if (status === 403) {
-    // Handle 403 Forbidden
-    const forbiddenMsg = "You do not have permission to perform this action.";
-    setErrorMessages([forbiddenMsg]);
-    return setTimeout(() => setErrorMessages([]), 4000);
-  }
-
-  const errorMsg =
-    error?.response?.data?.errors || error?.message || "An error occurred";
-  const messages = Array.isArray(errorMsg) ? errorMsg : [errorMsg];
-  console.log(errorMsg);
-
-  setErrorMessages(messages);
-  setTimeout(() => setErrorMessages([]), 4000);
-} finally {
-  setLoading(false);
-}
-
+      if (error.name !== "AbortError") {
+        console.error("Error fetching data:", error);
+        if (
+          error.response &&
+          (error.response.status === 401 ||
+            error.response.data.message === "Credential Invalid or Expired Please Login Again")
+        ) {
+          return setTimeout(() => {
+            clearAuthState();
+            // navigate("/");
+          }, 2000);
+        }
+      }
+    }
   };
 
   const filteredLearners = learners.filter((learner) =>
@@ -236,40 +210,21 @@ const MarkLearner = () => {
   );
 
   const NotCompleted = assignedCourses.filter(
-    (f) => f.totalDays !== f.attendedDays && f.statusOne !== "Completed"
+    (f) => f.totalDays === f.attendedDays || f.statusOne !== "Completed"
   );
 
   const Course = [...NotCompleted, ...Completed];
+
   return (
     <div className="p-4">
       <h2 className="mb-4 font-semibold sm:text-3xl md:text-2xl">
         Mark Attendance
       </h2>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-6">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-6">
         <div className="flex flex-col gap-6 lg:flex-row">
           <div className="flex flex-col w-full gap-4 lg:w-3/4">
-              {selectedLearnerDetails && (
-              <div className="block w-full p-4 border rounded-md lg:hidden">
-                <div className="flex flex-col items-center gap-2">
-                  <img
-                    src={`${URL}/api/image-proxy/${extractDriveFileId(
-                      selectedLearnerDetails.photo
-                    )}`}
-                    alt={selectedLearnerDetails.fullName}
-                    className="border rounded-full w-14 h-14"
-                  />
-                  <p className="text-sm font-semibold">
-                    {selectedLearnerDetails.fullName}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    ID: {selectedLearnerDetails.admissionNumber}
-                  </p>
-                </div>
-              </div>
-            )}
-
-  <div className="relative w-full">
+            <div className="relative w-full">
               <label
                 className={`
       absolute left-3 bg-white px-1 transition-all duration-200 pointer-events-none
@@ -296,9 +251,6 @@ const MarkLearner = () => {
               >
                 {learners.find((l) => l._id === selectedLearner)?.fullName}
               </button>
-                      {errors.selectedLearner && (
-          <p className="mt-1 text-sm text-red-500">{errors.selectedLearner.message}</p>
-        )}
 
               {isLearnerOpen && (
                 <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg">
@@ -330,15 +282,30 @@ const MarkLearner = () => {
                   </div>
                 </div>
               )}
-        
-   </div>
-      {/* {errors.selectedLearner?.message && (
-  <p className="mt-1 text-sm text-red-500">{errors.selectedLearner.message}</p>
-)} */}
+            </div>
             {courseError && (
               <p className="mt-1 text-sm text-red-500">{courseError}</p>
             )}
-        
+            {selectedLearnerDetails && (
+              <div className="block w-full p-4 border rounded-md lg:hidden">
+                <div className="flex flex-col items-center gap-2">
+                  <img
+                    src={`${URL}/api/image-proxy/${extractDriveFileId(
+                      selectedLearnerDetails.photo
+                    )}`}
+                    alt={selectedLearnerDetails.fullName}
+                    className="border rounded-full w-14 h-14"
+                  />
+                  <p className="text-sm font-semibold">
+                    {selectedLearnerDetails.fullName}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    ID: {selectedLearnerDetails.admissionNumber}
+                  </p>
+                </div>
+              </div>
+            )}
+
             <div className="relative w-full">
               <label
                 className={`
@@ -400,20 +367,13 @@ const MarkLearner = () => {
                   </div>
                 </div>
               )}
-{/* 
+
               {errors.selectedAssignedCourseId && (
                 <p className="mt-1 text-sm text-red-500">
                   {errors.selectedAssignedCourseId}
                 </p>
-              )} */}
+              )}
             </div>
-
-            {errors.assignedCourses?.message && (
-  <p className="mt-1 text-sm text-red-500">{errors.assignedCourses.message}</p>
-)}
-
-
-
 
             <div className="relative w-full">
               <label
@@ -464,102 +424,98 @@ const MarkLearner = () => {
                 </div>
               )}
 
-              {/* {errors.classType && (
+              {errors.classType && (
                 <p className="mt-1 text-sm text-red-500">{errors.classType}</p>
-              )} */}
+              )}
             </div>
-{errors.classType?.message && (
-  <p className="mt-1 text-sm text-red-500">{errors.classType.message}</p>
-)}
-         <div className="relative w-full">
-  <textarea
-    id="description"
-    {...register("description")}
-    className="peer block w-full px-2.5 pb-2.5 pt-4 text-sm text-gray-900 bg-transparent border border-gray-300 rounded-lg resize-none appearance-none focus:outline-none focus:ring-0 focus:border-blue-500"
-    placeholder=" "
-  ></textarea>
-  <label
-    htmlFor="description"
-    className="absolute text-sm text-gray-500 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white px-2 peer-placeholder-shown:scale-100 peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4 peer-focus:text-blue-500 start-1"
-  >
-    Description
-  </label>
-  {errors.description && (
-    <p className="mt-1 text-sm text-red-500">{errors.description.message}</p>
-  )}
-</div>
 
-<div className="relative w-full">
-  <input
-    type="date"
-    id="date"
-    {...register("date")}
-    className="peer block w-full px-2.5 pb-2.5 pt-4 text-sm text-gray-900 bg-transparent border border-gray-300 rounded-lg appearance-none focus:outline-none focus:ring-0 focus:border-blue-500"
-    placeholder=" "
-  />
-  <label
-    htmlFor="date"
-    className="absolute text-sm text-gray-500 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white px-2 peer-placeholder-shown:scale-100 peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4 peer-focus:text-blue-500 start-1"
-  >
-    Date
-  </label>
-  {errors.date && (
-    <p className="mt-1 text-sm text-red-500">{errors.date.message}</p>
-  )}
-</div>
+            <div className="relative w-full">
+              <textarea
+                id="description"
+                name="description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                className="peer block w-full px-2.5 pb-2.5 pt-4 text-sm text-gray-900 bg-transparent border border-gray-300 rounded-lg resize-none appearance-none focus:outline-none focus:ring-0 focus:border-blue-500"
+                placeholder=" "
+              />
+              <label
+                htmlFor="description"
+                className="absolute text-sm text-gray-500 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white px-2 peer-placeholder-shown:scale-100 peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4 peer-focus:text-blue-500 start-1"
+              >
+                Description
+              </label>
+              {errors.description && (
+                <p className="mt-1 text-sm text-red-500">
+                  {errors.description}
+                </p>
+              )}
+            </div>
 
+            <div className="relative w-full">
+              <input
+                type="date"
+                id="date"
+                name="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                onFocus={(event) =>
+                  (event.nativeEvent.target.defaultValue = "")
+                }
+                className="peer block w-full px-2.5 pb-2.5 pt-4 text-sm text-gray-900 bg-transparent border border-gray-300 rounded-lg appearance-none focus:outline-none focus:ring-0 focus:border-blue-500"
+                placeholder=" "
+              />
+              <label
+                htmlFor="date"
+                className="absolute text-sm text-gray-500 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white px-2 peer-placeholder-shown:scale-100 peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4 peer-focus:text-blue-500 start-1"
+              >
+                Date
+              </label>
+              {errors.date && (
+                <p className="mt-1 text-sm text-red-500">{errors.date}</p>
+              )}
+            </div>
 
             <div className="grid gap-6 md:grid-cols-2">
-             <div className="relative w-full">
-          
-            <div className="absolute inset-y-0 end-0 top-0 flex items-center pe-3.5 pointer-events-none">
-                <svg className="w-4 h-4 text-gray-500 dark:text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
-                    <path fill-rule="evenodd" d="M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12Zm11-4a1 1 0 1 0-2 0v4a1 1 0 0 0 .293.707l3 3a1 1 0 0 0 1.414-1.414L13 11.586V8Z" clip-rule="evenodd"/>
-                </svg>
-            </div>
-  <input
-    type="time"
-    id="checkIn"
-    {...register("checkIn")}
-    className="peer block w-full px-2.5 pb-2.5 pt-4 text-sm text-gray-900 bg-transparent border border-gray-300 rounded-lg appearance-none focus:outline-none focus:ring-0 focus:border-blue-500"
-    placeholder=" "
-  />
-  
-  <label
-    htmlFor="checkIn"
-    className="absolute text-sm text-gray-500 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white px-2 peer-placeholder-shown:scale-100 peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4 peer-focus:text-blue-500 start-1"
-  >
-    Check-In Time
-  </label>
-  {errors.checkIn && (
-    <p className="mt-1 text-sm text-red-500">{errors.checkIn.message}</p>
-  )}
-</div>
-
               <div className="relative w-full">
-                    <div className="absolute inset-y-0 end-0 top-0 flex items-center pe-3.5 pointer-events-none">
-                <svg className="w-4 h-4 text-gray-500 dark:text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
-                    <path fill-rule="evenodd" d="M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12Zm11-4a1 1 0 1 0-2 0v4a1 1 0 0 0 .293.707l3 3a1 1 0 0 0 1.414-1.414L13 11.586V8Z" clip-rule="evenodd"/>
-                </svg>
-            </div>
-  <input
-    type="time"
-    id="checkOut"
-    {...register("checkOut")}
-    className="peer block w-full px-2.5 pb-2.5 pt-4 text-sm text-gray-900 bg-transparent border border-gray-300 rounded-lg appearance-none focus:outline-none focus:ring-0 focus:border-blue-500"
-    placeholder=" "
-  />
-  <label
-    htmlFor="checkOut"
-    className="absolute text-sm text-gray-500 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white px-2 peer-placeholder-shown:scale-100 peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4 peer-focus:text-blue-500 start-1"
-  >
-    Check-Out Time
-  </label>
-  {errors.checkOut && (
-    <p className="mt-1 text-sm text-red-500">{errors.checkOut.message}</p>
-  )}
-</div>
-
+                <input
+                  type="time"
+                  id="checkIn"
+                  name="checkIn"
+                  value={checkIn}
+                  onChange={(e) => setCheckIn(e.target.value)}
+                  className="peer block w-full px-2.5 pb-2.5 pt-4 text-sm text-gray-900 bg-transparent border border-gray-300 rounded-lg appearance-none focus:outline-none focus:ring-0 focus:border-blue-500"
+                  placeholder=" "
+                />
+                <label
+                  htmlFor="checkIn"
+                  className="absolute text-sm text-gray-500 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white px-2 peer-placeholder-shown:scale-100 peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4 peer-focus:text-blue-500 start-1"
+                >
+                  Check-In Time
+                </label>
+                {errors.checkIn && (
+                  <p className="mt-1 text-sm text-red-500">{errors.checkIn}</p>
+                )}
+              </div>
+              <div className="relative w-full">
+                <input
+                  type="time"
+                  id="checkOut"
+                  name="checkOut"
+                  value={checkOut}
+                  onChange={(e) => setCheckOut(e.target.value)}
+                  className="peer block w-full px-2.5 pb-2.5 pt-4 text-sm text-gray-900 bg-transparent border border-gray-300 rounded-lg appearance-none focus:outline-none focus:ring-0 focus:border-blue-500"
+                  placeholder=" "
+                />
+                <label
+                  htmlFor="checkOut"
+                  className="absolute text-sm text-gray-500 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white px-2 peer-placeholder-shown:scale-100 peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4 peer-focus:text-blue-500 start-1"
+                >
+                  Check-In Time
+                </label>
+                {errors.checkOut && (
+                  <p className="mt-1 text-sm text-red-500">{errors.checkOut}</p>
+                )}
+              </div>
             </div>
 
             <div
@@ -649,7 +605,7 @@ const MarkLearner = () => {
           </div>
         </div>
 
-        <div className="flex flex-col mt-6 space-y-4 md:flex-row md:justify-end md:space-y-0 md:space-x-4">
+       <div className="flex flex-col mt-6 space-y-4 md:flex-row md:justify-end md:space-y-0 md:space-x-4">
           <button
             type="button"
             onClick={() => navigate(-1)}
@@ -657,16 +613,12 @@ const MarkLearner = () => {
           >
             Back
           </button>
-         <button
-  type="submit"
-  disabled={loading}
-  className={`px-6 py-3 text-white rounded-md ${
-    loading ? "bg-blue-300 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"
-  }`}
->
-  {loading ? "Submitting..." : "Submit"}
-</button>
-
+          <button
+            type="submit"
+            className="px-6 py-3 text-white bg-blue-600 rounded-md"
+          >
+            Submit
+          </button>
         </div>
       </form>
 
@@ -693,33 +645,8 @@ const MarkLearner = () => {
           </div>
         </div>
       )}
-  
-      {/* ❌ Error Toasts */}
-      {errorMessages.length > 0 && (
-        <div className="fixed z-50 w-full max-w-xs space-y-2 top-32 right-5">
-          {errorMessages.map((msg, i) => (
-            <div
-              key={i}
-              className="flex items-center p-4 text-white bg-red-600 rounded-md shadow-md"
-              role="alert"
-            >
-              <div className="inline-flex items-center justify-center w-8 h-8 mr-3 text-red-600 bg-white rounded-full">
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path
-                    fillRule="evenodd"
-                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm-1-4h2v2h-2v-2zm0-8h2v6h-2V6z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </div>
-              <span className="text-sm font-medium">{msg}</span>
-            </div>
-          ))}
-        </div>
-      )}
-
     </div>
   );
 };
 
-export default MarkLearner;
+export default InsMarkAtt;
