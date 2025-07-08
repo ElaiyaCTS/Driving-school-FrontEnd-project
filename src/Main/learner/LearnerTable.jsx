@@ -415,7 +415,7 @@ const LearnerTable = () => {
                     <td className="px-6 py-4">{(currentPage - 1) * limit + index + 1}</td>
                     <td className="px-4 py-4">
                       <img
-                        src={`${URL}/api/image-proxy/${extractDriveFileId(learner.photo)}`}
+                        src={`${URL}/api/image-proxy/${extractDriveFileId(learner.photo)}?t=${Date.now()}`}
                         alt="Learner"
                         className="object-cover w-16 h-16 border-4 border-gray-100 rounded-full shadow-md"
                       />

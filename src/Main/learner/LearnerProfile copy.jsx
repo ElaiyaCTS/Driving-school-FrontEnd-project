@@ -3,86 +3,60 @@ import { useNavigate } from "react-router-dom";
 import { URL } from "../../App";
 import axios from "axios";
 import moment from "moment";
+import { jwtDecode } from "jwt-decode";
 import { useRole } from "../../Components/AuthContext/AuthContext";
-import { extractDriveFileId } from "../../Components/ImageProxyRouterFunction/funtion.js";
-import { useLocation } from "react-router-dom";
 
-// ✅ Custom toast component
-const Toast = ({ message }) => (
-  <div className="fixed z-50 px-6 py-3 text-sm font-medium text-white -translate-x-1/2 bg-red-500 rounded-lg shadow-md top-5 left-1/2">
-    {message}
-  </div>
-);
+import { extractDriveFileId } from "../../Components/ImageProxyRouterFunction/funtion.js";
 
 const LearnerProfile = () => {
-  const location = useLocation();
-
   const navigate = useNavigate();
-  const { role, user, setUser, setRole, clearAuthState } = useRole();
+    const {role, user,setUser,setRole,clearAuthState} =  useRole();
 
   const [learner, setLearner] = useState(null);
   const [loading, setLoading] = useState(true);
-
-  const [errorMsg, setErrorMsg] = useState("");
   const profileId = user?.user_id;
 
   useEffect(() => {
     const fetchLearner = async () => {
       try {
-        const token = user;
+        const token =user;
         if (!token) {
-          setErrorMsg("Token is missing");
+          alert("Token is missing");
+          setLoading(false);
           return;
         }
         if (!profileId) {
-          setErrorMsg("Profile ID is missing");
+          console.error("Profile ID is missing");
           return;
         }
 
-        const { data } = await axios.get(`${URL}/api/user/learner/${profileId}`, {
-          withCredentials: true,
-        });
-
+        const { data } = await axios.get(
+          `${URL}/api/user/learner/${profileId}`,
+          {withCredentials: true,
+          }
+        );
         setLearner(data);
       } catch (error) {
         if (error.name !== "AbortError") {
           console.error("Error fetching data:", error);
-
-          // ✅ 401 handling
           if (
             error.response &&
             (error.response.status === 401 ||
-              error.response.data?.message ===
-                "Credential Invalid or Expired Please Login Again")
+              error.response.data.message === "Credential Invalid or Expired Please Login Again")
           ) {
-            setErrorMsg("Session expired. Redirecting to login...");
             return setTimeout(() => {
-              clearAuthState();
+             clearAuthState();
+              // navigate("/");
             }, 2000);
           }
-
-          // ✅ Handle custom error messages
-          const errorData = error?.response?.data;
-          const errors = errorData?.errors || errorData?.message || "An error occurred";
-
-          if (Array.isArray(errors)) {
-            setErrorMsg(errors.join(", "));
-          } else {
-            setErrorMsg(errors);
-          }
-
-          // ✅ Auto-clear error toast
-          setTimeout(() => {
-            setErrorMsg("");
-          }, 4000);
         }
       } finally {
-        setLoading(false); // ✅ cleanup loader
+        setLoading(false);
       }
     };
 
     fetchLearner();
-  }, [profileId,location.key]);
+  }, [profileId]);
 
   if (loading) {
     return <div className="mt-10 text-center">Loading...</div>;
@@ -96,8 +70,6 @@ const LearnerProfile = () => {
 
   return (
     <div className="p-4">
-      {errorMsg && <Toast message={errorMsg} />}
-
       <section className="flex flex-col p-5 mb-20 space-y-10 bg-white rounded-t-lg">
         <div className="flex items-center justify-between w-full">
           <div className="flex items-center space-x-3">

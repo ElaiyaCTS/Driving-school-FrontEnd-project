@@ -5,19 +5,8 @@ import { resolve } from 'path';
 // import tailwindcss from "@tailwindcss/vite";
 export default defineConfig({
   plugins: [react()],
-  build: {
-    rollupOptions: {
-      output: {
-        manualChunks: undefined,
-      },
-    },
-  },
-  resolve: {
-    alias: {
-      'pdfjs-dist/build/pdf.worker.entry': 'pdfjs-dist/build/pdf.worker.js',
-    },
-  },
 });
+
 // https://vite.dev/config/
 // export default defineConfig({ 
 
