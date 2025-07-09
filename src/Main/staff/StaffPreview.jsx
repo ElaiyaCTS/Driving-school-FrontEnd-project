@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { URL } from "../../App";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams,useLocation  } from "react-router-dom";
 import SingleStaff from "../attendance/staff/SingleStaff";
 import axios from "axios";
 import moment from "moment";
@@ -8,8 +8,10 @@ import { extractDriveFileId } from "../../Components/ImageProxyRouterFunction/fu
 import { useRole } from "../../Components/AuthContext/AuthContext";
 
 const StaffPreview = () => {
-  const navigate = useNavigate();
-        const {role, user,setUser,setRole,clearAuthState} =  useRole();
+      const location = useLocation();
+      const navigate = useNavigate();
+      const {role, user,setUser,setRole,clearAuthState} =  useRole();
+      const [reloadKey, setReloadKey] = useState(Date.now());
 
   const { id } = useParams();
   const [staff, setStaff] = useState(null);
@@ -23,7 +25,8 @@ const StaffPreview = () => {
           withCredentials: true,
         });
 
-        setStaff(response.data.data);
+        setStaff(response.data.staff);
+        setReloadKey(Date.now()); // triggers image refresh
       } catch (error) {
         if (error.name !== "AbortError") {
           console.error("Error fetching data:", error);
@@ -44,7 +47,7 @@ const StaffPreview = () => {
     };
 
     fetchstaff();
-  }, [id]);
+  }, [id,location.key]);
 
   if (loading) {
     return (
@@ -78,9 +81,7 @@ const StaffPreview = () => {
               <div className="h-[30%] md:h-[40%] w-full flex flex-col items-center rounded-t-lg bg-blue-100"></div>
               <div className="h-[70%] md:h-[60%] flex flex-col items-center space-y-8 absolute top-[20%] md:top-[25%]">
                 <img
-                  src={`${URL}/api/image-proxy/${extractDriveFileId(
-                    staff.photo
-                  )}`}
+                src={`${URL}/api/image-proxy/${extractDriveFileId(staff.photo)}?t=${reloadKey}`}
                   alt={`${staff.fullName}'s profile`}
                   className="object-cover w-56 h-56 border-4 border-white rounded-full shadow-md"
                 />

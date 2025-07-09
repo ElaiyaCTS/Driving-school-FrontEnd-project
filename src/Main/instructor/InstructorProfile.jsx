@@ -1,45 +1,38 @@
 import { useState, useEffect } from "react";
 import { URL } from "../../App";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import InstructorDashAttendance from "../attendance/instructor/InstructorDashAttendance";
 import moment from "moment";
 import { extractDriveFileId } from "../../Components/ImageProxyRouterFunction/funtion.js";
-import { jwtDecode } from "jwt-decode";
-import { useRole } from "../../Components/AuthContext/AuthContext"; // adjust path as needed
+import { useRole } from "../../Components/AuthContext/AuthContext";
+
 const InstructorProfile = () => {
+  const location = useLocation();
   const navigate = useNavigate();
   const [instructor, setInstructor] = useState(null);
+  const [photoVersion, setPhotoVersion] = useState(Date.now());
   const [loading, setLoading] = useState(true);
-const {role, user,setUser,setRole,clearAuthState} =  useRole();
-  const decoded = user ?user : null;
-  const InstructorId = decoded?.user_id;
+  const { role, user, setUser, setRole, clearAuthState } = useRole();
+  const InstructorId = user?.user_id;
 
   useEffect(() => {
     const fetchInstructor = async () => {
       try {
-     
-        const { data } = await axios.get(
-          `${URL}/api/user/instructor/${InstructorId}`,
-          {
-            withCredentials: true,
-          }
-        );
+        const { data } = await axios.get(`${URL}/api/user/instructor/${InstructorId}`, {
+          withCredentials: true,
+        });
 
         setInstructor(data);
+        setPhotoVersion(Date.now()); // Ensure new image loads after update
       } catch (error) {
-        if (error.name !== "AbortError") {
-          console.error("Error fetching data:", error);
-          if (
-            error.response &&
-            (error.response.status === 401 ||
-              error.response.data.message === "Credential Invalid or Expired Please Login Again")
-          ) {
-            return setTimeout(() => {
-              clearAuthState();
-              // navigate("/");
-            }, 2000);
-          }
+        if (
+          error?.response?.status === 401 ||
+          error?.response?.data?.message === "Credential Invalid or Expired Please Login Again"
+        ) {
+          return setTimeout(() => clearAuthState(), 2000);
+        } else {
+          console.error("Error fetching instructor:", error);
         }
       } finally {
         setLoading(false);
@@ -47,10 +40,7 @@ const {role, user,setUser,setRole,clearAuthState} =  useRole();
     };
 
     fetchInstructor();
-  }, [InstructorId]);
-
-  useEffect(() => {
-  }, [instructor]);
+  }, [InstructorId, location.key]); // location.key ensures fetch on back navigation
 
   if (loading) {
     return <div className="text-center text-lg">Loading...</div>;
@@ -64,9 +54,7 @@ const {role, user,setUser,setRole,clearAuthState} =  useRole();
             <button onClick={() => navigate(-1)}>
               <i className="fa-solid fa-arrow-left-long text-xl"></i>
             </button>
-            <h3 className="text-xl sm:text-2xl font-bold">
-              Instructor Details
-            </h3>
+            <h3 className="text-xl sm:text-2xl font-bold">Instructor Details</h3>
           </div>
         </div>
 
@@ -76,11 +64,9 @@ const {role, user,setUser,setRole,clearAuthState} =  useRole();
               <div className="h-[30%] md:h-[40%] w-full flex flex-col items-center rounded-t-lg bg-blue-100"></div>
               <div className="h-[70%] md:h-[60%] flex flex-col items-center space-y-8 absolute top-[20%] md:top-[25%]">
                 <img
-                  src={`${URL}/api/image-proxy/${extractDriveFileId(
-                    instructor.photo
-                  )}`}
-                  alt={instructor.photo.fullName}
-                  className="w-32 h-32  object-cover rounded-full border-4 border-white shadow-md"
+                  src={`${URL}/api/image-proxy/${extractDriveFileId(instructor.photo)}?t=${photoVersion}`}
+                  alt={instructor.fullName}
+                  className="w-32 h-32 object-cover rounded-full border-4 border-white shadow-md"
                 />
                 <div className="flex flex-col items-center space-y-3">
                   <h1 className="text-blue-600 text-lg font-semibold">
@@ -92,9 +78,7 @@ const {role, user,setUser,setRole,clearAuthState} =  useRole();
           </div>
 
           <div className="w-full md:col-span-3 space-y-5 h-full border-2 rounded-lg flex flex-col p-6 md:p-8">
-            <h3 className="text-base text-blue-600 font-semibold">
-              Personal Details
-            </h3>
+            <h3 className="text-base text-blue-600 font-semibold">Personal Details</h3>
             <table className="w-full text-xs text-left text-gray-500">
               <tbody>
                 {[
@@ -114,9 +98,7 @@ const {role, user,setUser,setRole,clearAuthState} =  useRole();
                   },
                 ].map(({ label, value }) => (
                   <tr key={label} className="align-top">
-                    <td className="px-4 py-3 text-base font-medium text-gray-700">
-                      {label}
-                    </td>
+                    <td className="px-4 py-3 text-base font-medium text-gray-700">{label}</td>
                     <td className="px-4 py-3 text-sm">{value || "N/A"}</td>
                   </tr>
                 ))}
@@ -124,8 +106,9 @@ const {role, user,setUser,setRole,clearAuthState} =  useRole();
             </table>
           </div>
         </div>
+
         <div className="w-full col-span-1 md:col-span-4 space-y-5 h-full border-2 rounded-lg flex flex-col p-6 md:p-8">
-          <section className="">
+          <section>
             <InstructorDashAttendance />
           </section>
         </div>

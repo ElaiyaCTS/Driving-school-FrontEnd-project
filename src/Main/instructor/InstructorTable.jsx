@@ -260,7 +260,7 @@ const InstructorTable = () => {
                         <img
                           src={`${URL}/api/image-proxy/${extractDriveFileId(
                             instructor.photo
-                          )}`}
+                          )}?t=${Date.now()}`}
                           alt={`${instructor.fullName}'s profile`}
                           
                           className="object-cover w-16 h-16 border rounded-full shadow-sm"

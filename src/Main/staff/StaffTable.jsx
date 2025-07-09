@@ -251,7 +251,7 @@ const StaffTable = () => {
                         <img
                           src={`${URL}/api/image-proxy/${extractDriveFileId(
                             instructor.photo
-                          )}`}
+                          )}?t=${Date.now()}`}
                           alt={`${instructor.fullName}'s profile`}
                           className="w-16 h-16 object-cover rounded-full border-2 border-white shadow-md"
                         />

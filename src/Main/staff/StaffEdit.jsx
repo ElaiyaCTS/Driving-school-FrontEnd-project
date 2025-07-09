@@ -1,381 +1,272 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { URL as BURL } from "../../App";
+import { useForm } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+import * as yup from "yup";
 import axios from "axios";
+import { URL as BURL } from "../../App";
 import { extractDriveFileId } from "../../Components/ImageProxyRouterFunction/funtion.js";
 import { useRole } from "../../Components/AuthContext/AuthContext";
 
-const StaffEdit = () => {
-  const navigate = useNavigate();
-  const { id } = useParams();
-      const {role, user,setUser,setRole,clearAuthState} =  useRole();
+const schema = yup.object().shape({
+  fullName: yup.string().required("Full Name is required."),
+  fathersName: yup.string().required("Father's Name is required."),
+  mobileNumber: yup
+    .string()
+    .required("Mobile Number is required.")
+    .matches(/^[0-9]{10}$/, "Mobile Number must be 10 digits."),
+  dateOfBirth: yup.string().required("Date of Birth is required."),
+  gender: yup.string().required("Gender is required."),
+  bloodGroup: yup.string().required("Blood Group is required."),
+  address: yup.string().required("Address is required."),
+  photo: yup
+    .mixed()
+    .test("photo-required", "Photo is required.", function (value) {
+      const { preview } = this.options.context || {};
+      return value instanceof File || Boolean(preview);
+    }),
+});
 
-  const [newStaff, setNewStaff] = useState({
-    fullName: "",
-    fathersName: "",
-    mobileNumber: "",
-    dateOfBirth: "",
-    gender: "",
-    bloodGroup: "",
-    address: "",
-    photo: null,
-  });
+const StaffEdit = () => {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const { clearAuthState } = useRole();
 
   const [loading, setLoading] = useState(true);
-  const [dataloading, setDataLoading] = useState(false);
-  const [selectedFile, setSelectedFile] = useState(null);
+  const [submitLoading, setSubmitLoading] = useState(false);
+  const [preview, setPreview] = useState(null);
   const [toastOpen, setToastOpen] = useState(false);
-  const [error, setError] = useState(null);
 
-  const formatDate = (isoDate) => {
-    return isoDate ? isoDate.split("T")[0] : "";
-  };
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    setError,
+    reset,
+    formState: { errors },
+  } = useForm({
+    resolver: yupResolver(schema),
+    context: { preview },
+  });
 
-  const fetchStaff = async () => {
-
+  const fetchInstructor = async () => {
     try {
-      const response = await axios.get(`${BURL}/api/admin/staff/${id}`, {
-       withCredentials: true,
+      const { data } = await axios.get(`${BURL}/api/admin/staff/${id}`, {
+        withCredentials: true,
       });
+console.log("data",data);
+// console.log("name",data.staff.);
 
-      if (response.data.data) {
-        const staff = response.data.data;
+      const userData = {
+        fullName: data.staff.fullName || "",
+        fathersName: data.staff.fathersName || "",
+        mobileNumber: data.staff.mobileNumber || "",
+        dateOfBirth: data.staff.dateOfBirth?.split("T")[0] || "",
+        gender: data.staff.gender || "",
+        bloodGroup: data.staff.bloodGroup || "",
+        address: data.staff.address || "",
+        photo: data.staff.photo||null,
+      };
+console.log("userData",userData);
 
-        setNewStaff({
-          fullName: staff.fullName || "",
-          fathersName: staff.fathersName || "",
-          mobileNumber: staff.mobileNumber || "",
-          dateOfBirth: formatDate(staff.dateOfBirth),
-          gender: staff.gender || "",
-          bloodGroup: staff.bloodGroup || "",
-          address: staff.address || "",
-          photo: staff.photo || null,
-        });
+      reset(userData);
 
-        if (staff.photo) {
-          const driveId = extractDriveFileId(staff.photo);
-          const imageUrl = driveId
-            ? `${BURL}/api/image-proxy/${driveId}`
-            : `${staff.photo}?t=${new Date().getTime()}`;
-
-          setSelectedFile(imageUrl);
-        }
+      if (data.staff.photo) {
+        const driveId = extractDriveFileId(data.staff.photo);
+        const photoUrl = driveId ? `${BURL}/api/image-proxy/${driveId}` : `${data.staff.photo}?t=${Date.now()}`;
+        setPreview(photoUrl);
       }
-    } catch (error) {
-      console.error("Error fetching staff:", error);
-      setError(error.message);
+    } catch (err) {
+      if (
+        err?.response?.status === 401 ||
+        err?.response?.data?.message === "Credential Invalid or Expired Please Login Again"
+      ) {
+        setTimeout(() => clearAuthState(), 2000);
+      }
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchStaff();
+    fetchInstructor();
   }, [id]);
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setNewStaff((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleUpdateSubmit = async (e) => {
-    e.preventDefault();
-
+  const onSubmit = async (data) => {
     const formData = new FormData();
-
-    Object.keys(newStaff).forEach((key) => {
-      if (key !== "photo") {
-        formData.append(key, newStaff[key]);
-      }
+    Object.keys(data).forEach((key) => {
+      if (key !== "photo") formData.append(key, data[key]);
     });
+    if (data.photo instanceof File) formData.append("photo", data.photo);
 
-    if (selectedFile instanceof File) {
-      formData.append("photo", selectedFile);
-    }
-
+    setSubmitLoading(true);
     try {
-      setDataLoading(true)
       await axios.put(`${BURL}/api/admin/staff/${id}`, formData, {
-      withCredentials: true,
+        withCredentials: true,
       });
 
       setToastOpen(true);
-
       setTimeout(() => {
-      setDataLoading(false)
-
         setToastOpen(false);
         navigate(-1);
       }, 1000);
-
-      fetchStaff();
     } catch (error) {
-      if (error.name !== "AbortError") {
-        if (
-          error.response &&
-          (error.response.status === 401 ||
-            error.response.data.message === "Credential Invalid or Expired Please Login Again")
-        ) {
-          return setTimeout(() => {
-           clearAuthState()
-          }, 2000);
-        }
+      const err =
+        error?.response?.data?.errors ||
+        error?.response?.data?.message ||
+        error.message;
+
+      if (
+        error?.response?.status === 401 ||
+        error?.response?.data?.message === "Credential Invalid or Expired Please Login Again"
+      ) {
+        return setTimeout(() => clearAuthState(), 2000);
       }
+
+      const messages = Array.isArray(err) ? err : [err];
+      messages.forEach((msg, i) => {
+        setTimeout(() => {
+          const toast = document.createElement("div");
+          toast.textContent = msg;
+          toast.className =
+            "fixed top-20 right-5 z-50 bg-red-600 text-white px-4 py-2 rounded-md shadow-md";
+          document.body.appendChild(toast);
+          setTimeout(() => toast.remove(), 4000);
+        }, i * 100);
+      });
+    } finally {
+      setSubmitLoading(false);
     }
   };
 
-  const handleFileChange = (event) => {
-    const file = event.target.files[0];
-    if (file instanceof File) {
-      setSelectedFile(file);
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setValue("photo", file, { shouldValidate: true });
+      const reader = new FileReader();
+      reader.onloadend = () => setPreview(reader.result);
+      reader.readAsDataURL(file);
     }
   };
 
-  const handleRemoveFile = () => {
-    setSelectedFile(null);
+  const removeFile = () => {
+    setValue("photo", null, { shouldValidate: true });
+    setPreview(null);
   };
 
-  if (loading) return  <div className="text-center py-5 text-blue-600 font-semibold text-lg">
-          Loading...
-        </div>;
+  if (loading) return <p className="text-center py-4 text-blue-600">Loading...</p>;
 
   return (
     <div className="p-4">
-      <h3 className="text-xl font-bold mb-6">Update Staff Details</h3>
-
-      <form onSubmit={handleUpdateSubmit}>
+      <h2 className="text-2xl font-semibold mb-4">Update Staff</h2>
+      <form onSubmit={handleSubmit(onSubmit)}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 gap-y-10">
-          <div className="relative">
-            <input
-              type="text"
-              id="fullName"
-              name="fullName"
-              placeholder=" "
-              value={newStaff.fullName}
-              onChange={handleInputChange}
-              className="block px-2.5 pb-2.5 pt-4 w-full text-sm text-gray-900 bg-transparent rounded-lg border border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-500 peer"
-            />
-            <label
-              htmlFor="fullName"
-              className="absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white dark:bg-gray-900 px-2 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-1/2 peer-placeholder-shown:top-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4 left-2"
-            >
-              Full name
-            </label>
-          </div>
-          <div className="relative">
-            <input
-              type="text"
-              id="fathersName"
-              name="fathersName"
-              placeholder=" "
-              value={newStaff.fathersName}
-              onChange={handleInputChange}
-              className="block px-2.5 pb-2.5 pt-4 w-full text-sm text-gray-900 bg-transparent rounded-lg border border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-500 peer"
-            />
-            <label
-              htmlFor="fathersName"
-              className="absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white dark:bg-gray-900 px-2 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-1/2 peer-placeholder-shown:top-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4 left-2"
-            >
-              Father&apos;s name
-            </label>
-          </div>
-          <div className="relative">
-            <input
-              type="text"
-              id="mobileNumber"
-              name="mobileNumber"
-              placeholder=" "
-              maxLength={10}
-              value={newStaff.mobileNumber}
-              onChange={handleInputChange}
-              className="block px-2.5 pb-2.5 pt-4 w-full text-sm text-gray-900 bg-transparent rounded-lg border border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-500 peer"
-            />
-            <label
-              htmlFor="mobileNumber"
-              className="absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white dark:bg-gray-900 px-2 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-1/2 peer-placeholder-shown:top-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4 left-2"
-            >
-              Mobile number
-            </label>
-          </div>
-          <div className="relative">
-            <label
-              htmlFor="dateOfBirth"
-              className="absolute text-sm text-gray-500 duration-300 transform -translate-y-4 scale-75 top-2 z-10 bg-white px-2 peer-placeholder-shown:top-1/2"
-            >
-              Date of Birth
-            </label>
-            <input
-              type="date"
-              id="dateOfBirth"
-              name="dateOfBirth"
-              value={newStaff.dateOfBirth}
-              onChange={handleInputChange}
-              onFocus={(event) => (event.nativeEvent.target.defaultValue = "")}
-              className="block px-2.5 pb-2.5 pt-4 w-full text-sm text-gray-900 bg-transparent rounded-lg border border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-500 peer"
-            />
-          </div>
-          <div className="relative">
-            <label
-              htmlFor="gender"
-              className="absolute text-sm text-gray-500 duration-300 transform -translate-y-4 scale-75 top-2 z-10 bg-white px-2 peer-placeholder-shown:top-1/2"
-            >
-              Gender
-            </label>
-            <select
-              id="gender"
-              name="gender"
-              value={newStaff.gender}
-              onChange={handleInputChange}
-              className="block px-2.5 pb-2.5 pt-4 w-full text-sm text-gray-900 bg-transparent rounded-lg border border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-500 peer"
-            >
-              <option value="" disabled hidden>
-                Select Gender
-              </option>
-              <option value="Male">Male</option>
-              <option value="Female">Female</option>
-              <option value="Other">Other</option>
-            </select>
-          </div>
-          <div className="relative">
-            <label
-              htmlFor="bloodGroup"
-              className="absolute text-sm text-gray-500 duration-300 transform -translate-y-4 scale-75 top-2 z-10 bg-white px-2 peer-placeholder-shown:top-1/2"
-            >
-              Blood Group
-            </label>
-            <select
-              id="bloodGroup"
-              name="bloodGroup"
-              value={newStaff.bloodGroup}
-              onChange={handleInputChange}
-              className="block px-2.5 pb-2.5 pt-4 w-full text-sm text-gray-900 bg-transparent rounded-lg border border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-500 peer"
-            >
-              <option value="" disabled hidden>
-                Select Blood Group
-              </option>
-              <option value="A+">A+</option>
-              <option value="A-">A-</option>
-              <option value="B+">B+</option>
-              <option value="B-">B-</option>
-              <option value="AB+">AB+</option>
-              <option value="AB-">AB-</option>
-              <option value="O+">O+</option>
-              <option value="O-">O-</option>
-            </select>
-          </div>
-
-          <div className="relative mt-6">
-            <textarea
-              id="address"
-              name="address"
-              placeholder=" "
-              value={newStaff.address}
-              onChange={handleInputChange}
-              className="block px-2.5 pb-2.5 pt-4 w-full text-sm text-gray-900 bg-transparent rounded-lg border border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-500 peer h-40 resize-none"
-            ></textarea>
-            <label
-              htmlFor="address"
-              className="absolute text-sm text-gray-500 dark:text-blue-400 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white dark:bg-gray-900 px-2 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-1/2 peer-placeholder-shown:top-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4 left-2"
-            >
-              Address
-            </label>
-          </div>
-          <div className="flex flex-col w-full">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Photo
-            </label>
-
-            <label
-              htmlFor="dropzone-file"
-              className={`flex items-center justify-center w-full h-40 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer 
-            ${!selectedFile ? "dark:bg-gray-700" : ""} 
-            dark:border-gray-600 relative overflow-hidden`}
-            >
-              {selectedFile ? (
-                <img
-                  src={
-                    typeof selectedFile === "string"
-                      ? selectedFile
-                      : URL.createObjectURL(selectedFile)
-                  }
-                  alt="staff"
-                  className="w-full h-full object-contain rounded-lg"
-                />
-              ) : (
-                <span className="text-gray-400 dark:text-gray-300 text-sm">
-                  Click to upload or drag an image
-                </span>
-              )}
-
+          {["fullName", "fathersName", "mobileNumber", "dateOfBirth"].map((id) => (
+            <div className="relative" key={id}>
               <input
-                id="dropzone-file"
-                type="file"
-                className="hidden"
-                accept="image/*"
-                onChange={handleFileChange}
-                key={selectedFile}
+                type={id === "dateOfBirth" ? "date" : "text"}
+                {...register(id)}
+                placeholder=" "
+                className="peer w-full px-2.5 pb-2.5 pt-4 text-sm text-gray-900 bg-transparent border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-blue-500"
               />
-            </label>
+              <label htmlFor={id} className="absolute text-sm text-gray-500 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white px-2 peer-placeholder-shown:top-1/2 peer-placeholder-shown:scale-100 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4 start-1">
+                {id === "fathersName" ? "Father's Name" : id.replace(/([A-Z])/g, " $1").replace(/^./, (s) => s.toUpperCase())}
+              </label>
+              {errors[id] && <p className="text-red-500 text-sm mt-1">{errors[id].message}</p>}
+            </div>
+          ))}
 
-            {selectedFile && (
-              <div className="mt-2 flex justify-between items-center">
-                <p className="text-sm text-gray-800 dark:text-gray-200">
-                  {typeof selectedFile === "string" ? "" : selectedFile.name}
-                </p>
-                <button
-                  type="button"
-                  onClick={handleRemoveFile}
-                  className="text-red-500 text-sm"
-                >
-                  Remove
-                </button>
+          {["gender", "bloodGroup"].map((id) => (
+            <div className="relative" key={id}>
+              <select
+                {...register(id)}
+                defaultValue=""
+                className="peer w-full px-2.5 pb-2.5 pt-4 text-sm text-gray-900 bg-transparent border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-blue-500"
+              >
+                <option value="" disabled hidden>
+                  Select {id.charAt(0).toUpperCase() + id.slice(1)}
+                </option>
+                {(id === "gender"
+                  ? ["Male", "Female", "Other"]
+                  : ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"]).map((opt) => (
+                  <option key={opt} value={opt}>
+                    {opt}
+                  </option>
+                ))}
+              </select>
+              <label htmlFor={id} className="absolute text-sm text-gray-500 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white px-2 peer-placeholder-shown:top-1/2 peer-placeholder-shown:scale-100 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4 start-1">
+                {id === "bloodGroup" ? "Blood Group" : "Gender"}
+              </label>
+              {errors[id] && <p className="text-red-500 text-sm mt-1">{errors[id].message}</p>}
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-6">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Address</label>
+          <textarea
+            {...register("address")}
+            className="peer w-full px-2.5 pb-2.5 pt-4 text-sm text-gray-900 bg-transparent border border-gray-300 rounded-md resize-none h-36 focus:outline-none focus:ring-0 focus:border-blue-500"
+            placeholder=" "
+          ></textarea>
+          {errors.address && <p className="text-red-500 text-sm mt-1">{errors.address.message}</p>}
+        </div>
+
+        <div className="mt-6">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Photo</label>
+          <label htmlFor="photo" className="flex items-center justify-center w-full h-36 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer relative overflow-hidden">
+            {preview ? (
+              <img src={preview} alt="Preview" className="w-full h-full object-contain rounded-lg" />
+            ) : (
+              <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                <p className="mb-2 text-sm text-gray-500"><span className="font-semibold">Click to upload</span></p>
               </div>
             )}
-          </div>
+            <input
+              id="photo"
+              type="file"
+              className="hidden"
+              accept="image/*"
+              onChange={handleFileChange}
+            />
+          </label>
+          {preview && (
+            <div className="mt-2 flex justify-between items-center">
+              <p className="text-sm">{typeof preview === "string" ? "Photo preview" : preview.name}</p>
+              <button type="button" onClick={removeFile} className="text-red-500 text-sm">Remove</button>
+            </div>
+          )}
+          {errors.photo && <p className="text-red-500 text-sm mt-1">{errors.photo.message}</p>}
         </div>
+{/* 
+        <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4 gap-y-10">
+          {["username", "password"].map((id) => (
+            <div className="relative" key={id}>
+              <input
+                type={id === "password" ? "password" : "text"}
+                {...register(id)}
+                placeholder=" "
+                className="peer w-full px-2.5 pb-2.5 pt-4 text-sm text-gray-900 bg-transparent border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-blue-500"
+              />
+              <label htmlFor={id} className="absolute text-sm text-gray-500 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white px-2 peer-placeholder-shown:top-1/2 peer-placeholder-shown:scale-100 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4 start-1">
+                {id.charAt(0).toUpperCase() + id.slice(1)}
+              </label>
+              {errors[id] && <p className="text-red-500 text-sm mt-1">{errors[id].message}</p>}
+            </div>
+          ))}
+        </div> */}
 
-           <div className="flex flex-col md:flex-row md:justify-end space-y-4 md:space-y-0 md:space-x-4 mt-6">
-        <button
-  onClick={() => navigate(-1)}
-  disabled={dataloading}
-  className={`bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-800 
-    ${loading ? "opacity-50 cursor-not-allowed" : ""}`}
->
-  Back
-</button>
-   {dataloading? (<button disabled type="button" className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-800">
-<svg aria-hidden="true" role="status" className="inline w-4 h-4 me-3 text-white animate-spin" viewBox="0 0 100 101" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z" fill="#E5E7EB"/>
-<path d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z" fill="currentColor"/>
-</svg>Update...</button>
-):( <button
-            type="submit"
-            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-800"
-          >
-            Update
-          </button>)}
-         
+        <div className="flex flex-col md:flex-row md:justify-end space-y-4 md:space-y-0 md:space-x-4 mt-6">
+          <button type="button" onClick={() => navigate(-1)} className="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-800">Back</button>
+          <button type="submit" disabled={submitLoading} className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-800">
+            {submitLoading ? "Updating..." : "Update"}
+          </button>
         </div>
       </form>
+
       {toastOpen && (
-        <div
-          id="toast-success"
-          className="fixed top-20 right-5 flex items-center justify-center w-full max-w-xs p-4 text-white bg-blue-700 rounded-md shadow-md"
-          role="alert"
-        >
-          <div className="inline-flex items-center justify-center shrink-0 w-8 h-8 text-green-700 bg-green-100 rounded-md dark:bg-green-800 dark:text-green-400">
-            <svg
-              className="w-5 h-5"
-              aria-hidden="true"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-            >
-              <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5Zm3.707 8.207-4 4a1 1 0 0 1-1.414 0l-2-2a1 1 0 0 1 1.414-1.414L9 10.586l3.293-3.293a1 1 0 0 1 1.414 1.414Z" />
-            </svg>
-            <span className="sr-only">Check icon</span>
-          </div>
-          <div className="ms-3 text-sm font-normal">Updated successfully</div>
+        <div className="fixed top-20 right-5 flex items-center justify-center w-full max-w-xs p-4 text-white bg-blue-700 rounded-md shadow-md">
+          Staff updated successfully
         </div>
       )}
     </div>

@@ -155,7 +155,8 @@ const onSubmit = async (data) => {
 
   const renderSelect = (name, label, options) => (
     <div className="relative w-full">
-      <select id={name} {...register(name)} className={floatingInputClass}>
+                 
+      <select id={name} defaultValue=""  {...register(name)} className={floatingInputClass}>
         <option value="" disabled hidden>Select an option</option>
         {options.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
       </select>
@@ -236,7 +237,7 @@ const onSubmit = async (data) => {
               <svg className="w-8 h-8 mb-4 text-gray-500" fill="none" viewBox="0 0 20 16">
                 <path stroke="currentColor" strokeWidth="2" d="M13 13h3a3 3 0 0 0 0-6A5.5 5.5 0 0 0 5 5a4 4 0 0 0 0 8h2M10 15V6m0 0L8 8m2-2 2 2" />
               </svg>
-              <p className="mb-2 text-sm text-gray-500">Click to upload or drag and drop</p>
+              <p className="mb-2 text-sm text-gray-500">Click to upload </p>
               <p className="text-xs text-gray-500">Accepted: {acceptType}</p>
             </div>
           )}
