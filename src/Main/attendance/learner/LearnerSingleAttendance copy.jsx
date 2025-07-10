@@ -21,7 +21,7 @@ const LearnerSingleAttendance = () => {
   const [fromDate, setFromDate] = useState("");
   const [search, setSearch] = useState("");
   const [classType, setClassType] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState(search);
   const [date, setDate] = useState("");
 
   const debounceTimeout = useRef(null);
@@ -57,13 +57,15 @@ const LearnerSingleAttendance = () => {
   };
 
   useEffect(() => {
-    if (authLoading || !user?.user_id) return;
+    if (authLoading) return;
+    if (!user?.user_id) return;
 
     const controller = new AbortController();
-    setLoading(true);
-    setError(null);
 
     const fetchAttendanceData = async () => {
+      setLoading(true);
+      setError(null);
+
       if ((fromDate && !toDate) || (!fromDate && toDate)) {
         setLoading(false);
         return;
@@ -104,19 +106,14 @@ const LearnerSingleAttendance = () => {
         setTotalPages(response.data.totalPages || 1);
       } catch (error) {
         console.error(error);
-
-        if (
-          error?.response?.status === 401 ||
-          error?.response?.data?.message === "Credential Invalid or Expired Please Login Again"
-        ) {
-          clearAuthState?.();
-        }
-
         setError("Failed to fetch data");
-
-        setTimeout(() => {
-          setError(null);
-        }, 4000);
+        if (
+          error.response &&
+          (error.response.status === 401 ||
+            error.response.data.message === "Credential Invalid or Expired Please Login Again")
+        ) {
+          // clearAuthState();
+        }
       } finally {
         setLoading(false);
       }
@@ -146,68 +143,57 @@ const LearnerSingleAttendance = () => {
   }, [location.search]);
 
   useEffect(() => {
-    const params = new URLSearchParams(location.search);
+  const params = new URLSearchParams(location.search);
 
-    const urlSearch = params.get("search") || "";
-    const urlFromDate = params.get("fromdate") || "";
-    const urlToDate = params.get("todate") || "";
-    const urlClassType = params.get("classType") || "";
-    const urlDate = params.get("date") || "";
-    const urlPage = parseInt(params.get("page")) || 1;
+  const urlSearch = params.get("search") || "";
+  const urlFromDate = params.get("fromdate") || "";
+  const urlToDate = params.get("todate") || "";
+  const urlClassType = params.get("classType") || "";
+  const urlDate = params.get("date") || "";
+  const urlPage = parseInt(params.get("page")) || 1;
 
-    setSearch(urlSearch);
-    setFromDate(urlFromDate);
-    setToDate(urlToDate);
-    setClassType(urlClassType);
-    setDate(urlDate);
-    setCurrentPage(urlPage);
+  setSearch(urlSearch);
+  setFromDate(urlFromDate);
+  setToDate(urlToDate);
+  setClassType(urlClassType);
+  setDate(urlDate);
+  setCurrentPage(urlPage);
 
-    const shouldUpdate =
-      !params.has("page") || !params.has("limit") || params.get("limit") !== "5";
+  // Initial URL normalization — add default query params if missing
+  const shouldUpdate =
+    !params.has("page") ||
+    !params.has("limit") ||
+    params.get("limit") !== "5";
 
-    if (shouldUpdate) {
-      params.set("page", urlPage.toString());
-      params.set("limit", "5");
+  if (shouldUpdate) {
+    params.set("page", urlPage.toString());
+    params.set("limit", "5");
 
-      if (urlSearch.trim().length < 3) params.delete("search");
-      if (!urlFromDate) params.delete("fromdate");
-      if (!urlToDate) params.delete("todate");
-      if (!urlClassType) params.delete("classType");
-      if (!urlDate) params.delete("date");
+    if (urlSearch.trim().length < 3) params.delete("search");
+    if (!urlFromDate) params.delete("fromdate");
+    if (!urlToDate) params.delete("todate");
+    if (!urlClassType) params.delete("classType");
+    if (!urlDate) params.delete("date");
 
-      navigate({ search: params.toString() }, { replace: true });
-    }
-  }, []);
+    navigate({ search: params.toString() }, { replace: true });
+  }
+}, []);
 
   const handleSearchChange = (e) => {
     const value = e.target.value;
-
-    const isPaste =
-      e.nativeEvent.inputType === "insertFromPaste" ||
-      e.nativeEvent?.clipboardData;
-
     setSearch(value);
-
     if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
-
-    const applySearch = () => {
-      const trimmed = value.trim();
-      setDebouncedSearch(trimmed);
+    debounceTimeout.current = setTimeout(() => {
+      setDebouncedSearch(value);
       updateURLParams({
-        search: trimmed,
+        search: value,
         fromdate: fromDate,
         todate: toDate,
         date,
         classType,
         page: 1,
       });
-    };
-
-    if (isPaste) {
-      applySearch(); // instant fetch
-    } else {
-      debounceTimeout.current = setTimeout(applySearch, 2000);
-    }
+    }, 2000);
   };
 
   const handleClassTypeChange = (e) => {
@@ -228,9 +214,19 @@ const LearnerSingleAttendance = () => {
     setFromDate(value);
     if (!value) {
       setToDate("");
-      updateURLParams({ fromdate: "", todate: "", search, page: 1 });
+      updateURLParams({
+        fromdate: "",
+        todate: "",
+        search,
+        page: 1,
+      });
     } else {
-      updateURLParams({ fromdate: value, todate: toDate, search, page: 1 });
+      updateURLParams({
+        fromdate: value,
+        todate: toDate,
+        search,
+        page: 1,
+      });
     }
     setCurrentPage(1);
   };
@@ -265,7 +261,7 @@ const LearnerSingleAttendance = () => {
     <div className="p-4">
       <div className="flex flex-row items-center justify-between gap-4 mb-4">
         <h3 className="text-xl font-bold text-center md:text-left">
-          Attendance History
+          Attendance  History
         </h3>
       </div>
 
@@ -278,7 +274,11 @@ const LearnerSingleAttendance = () => {
             strokeWidth="2"
             viewBox="0 0 24 24"
           >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M21 21l-4.35-4.35"
+            />
             <circle cx="10" cy="10" r="7" />
           </svg>
           <input
@@ -329,7 +329,7 @@ const LearnerSingleAttendance = () => {
               type="date"
               value={toDate}
               onChange={handleToDateChange}
-              min={fromDate || undefined}
+             min={fromDate || undefined}
               disabled={!fromDate}
               className="w-full px-3 py-2 text-sm text-gray-900 border border-gray-300 rounded-lg peer disabled:bg-gray-100 disabled:cursor-not-allowed"
             />
@@ -339,12 +339,6 @@ const LearnerSingleAttendance = () => {
           </div>
         </div>
       </div>
-
-      {error && (
-        <div className="mb-4 text-sm font-medium text-center text-red-500">
-          {error}
-        </div>
-      )}
 
       {loading ? (
         <div className="font-semibold text-center text-blue-600">Loading...</div>

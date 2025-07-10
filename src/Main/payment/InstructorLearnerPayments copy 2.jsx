@@ -49,11 +49,7 @@ const InstructorLearnerPayments = () => {
   const fetchPayments = async () => {
     if (!instructorId) return;
 
-    if (
-      (fromDate && !toDate) ||
-      (!fromDate && toDate) ||
-      (fromDate && toDate && new Date(fromDate) > new Date(toDate))
-    ) {
+    if ((fromDate && !toDate) || (!fromDate && toDate) || (fromDate && toDate && new Date(fromDate) > new Date(toDate))) {
       setPayments([]);
       return;
     }
@@ -91,8 +87,10 @@ const InstructorLearnerPayments = () => {
     }
   };
 
+  // Sync from URL on first load
   useEffect(() => {
     const params = new URLSearchParams(location.search);
+
     const search = params.get("search") || "";
     const payment = params.get("paymentMethod") || "";
     const from = params.get("fromdate") || "";
@@ -105,6 +103,7 @@ const InstructorLearnerPayments = () => {
     setToDate(to);
     setCurrentPage(page);
 
+    // Ensure URL is clean and contains limit
     updateURLParams({
       search,
       paymentMethod: payment,
@@ -121,11 +120,10 @@ const InstructorLearnerPayments = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [paymentMethod, fromDate, toDate, currentPage]);
 
-  // Debounced fetch for search term
+  // Debounced fetch for search
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
-      if (controllerRef.current) controllerRef.current.abort();
       fetchPayments();
     }, 2000);
 
@@ -146,25 +144,6 @@ const InstructorLearnerPayments = () => {
       todate: toDate,
       page: 1,
     });
-  };
-
-  const handleSearchPaste = (e) => {
-    const pastedText = e.clipboardData.getData("text").trim();
-    if (pastedText) {
-      setSearchTerm(pastedText);
-      setCurrentPage(1);
-      updateURLParams({
-        search: pastedText,
-        paymentMethod,
-        fromdate: fromDate,
-        todate: toDate,
-        page: 1,
-      });
-
-      if (controllerRef.current) controllerRef.current.abort();
-      fetchPayments(); // Instant fetch on paste
-    }
-    e.preventDefault(); // Avoid double fetch
   };
 
   const handlePaymentMethodChange = (e) => {
@@ -220,19 +199,21 @@ const InstructorLearnerPayments = () => {
 
   return (
     <div className="p-4">
-      <div className="flex flex-col gap-3 mb-4 md:flex-row md:items-center md:justify-between">
-        <h3 className="text-xl font-bold text-center md:text-left">Learner Payment Details</h3>
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
+        <h3 className="text-xl font-bold text-center md:text-left">
+          Learner Payment Details
+        </h3>
 
         <button
           onClick={() => navigate("/instructor/payment/add")}
-          className="w-full px-4 py-2 text-white transition duration-300 bg-blue-500 rounded-md hover:bg-blue-600 md:w-auto"
+          className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition duration-300 w-full md:w-auto"
         >
           Add Payment
         </button>
       </div>
 
-      <div className="flex flex-col gap-4 mb-4 md:flex-wrap md:flex-row md:items-end md:justify-between">
-        <div className="relative flex-1 w-full md:w-auto md:max-w-md lg:max-w-sm">
+      <div className="flex flex-col gap-4 md:flex-wrap md:flex-row md:items-end md:justify-between mb-4">
+        <div className="relative w-full md:w-auto md:max-w-md lg:max-w-sm flex-1">
           <svg
             className="absolute left-3 top-2.5 text-gray-400 w-5 h-5"
             fill="none"
@@ -245,15 +226,14 @@ const InstructorLearnerPayments = () => {
           </svg>
           <input
             type="text"
-            className="w-full py-2 pl-10 pr-8 text-sm text-gray-900 border border-gray-300 rounded-lg"
+            className="w-full border border-gray-300 text-gray-900 text-sm rounded-lg pl-10 pr-8 py-2"
             placeholder="Search..."
             value={searchTerm}
             onChange={handleSearchChange}
-            onPaste={handleSearchPaste}
           />
           {searchTerm && (
             <button
-              className="absolute text-gray-600 transform -translate-y-1/2 right-3 top-1/2 hover:text-blue-500"
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-600 hover:text-blue-500"
               onClick={() => {
                 setSearchTerm("");
                 setCurrentPage(1);
@@ -278,10 +258,10 @@ const InstructorLearnerPayments = () => {
           )}
         </div>
 
-        <div className="flex flex-col w-full gap-3 sm:flex-row sm:flex-wrap md:flex-1 md:justify-end">
+        <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3 w-full md:flex-1 md:justify-end">
           <div className="relative w-full sm:w-40">
             <select
-              className="block w-full px-3 py-2 text-sm text-gray-900 bg-transparent border border-gray-300 rounded-lg peer"
+              className="peer block w-full text-sm text-gray-900 bg-transparent rounded-lg border border-gray-300 px-3 py-2"
               value={paymentMethod}
               onChange={handlePaymentMethodChange}
             >
@@ -294,13 +274,13 @@ const InstructorLearnerPayments = () => {
             </label>
           </div>
 
-          <div className="flex flex-col w-full gap-3 sm:flex-row sm:w-auto">
+          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
             <div className="relative w-full sm:w-40">
               <input
                 type="date"
                 value={fromDate}
                 onChange={handleFromDateChange}
-                className="w-full px-3 py-2 text-sm text-gray-900 border border-gray-300 rounded-lg peer"
+                className="peer border border-gray-300 text-gray-900 text-sm rounded-lg px-3 py-2 w-full"
               />
               <label className="absolute left-3 top-[-8px] text-xs bg-white px-1 text-gray-500">
                 From
@@ -313,7 +293,7 @@ const InstructorLearnerPayments = () => {
                 onChange={handleToDateChange}
                 disabled={!fromDate}
                 min={fromDate}
-                className="w-full px-3 py-2 text-sm text-gray-900 border border-gray-300 rounded-lg peer disabled:bg-gray-100"
+                className="peer border border-gray-300 text-gray-900 text-sm rounded-lg px-3 py-2 w-full disabled:bg-gray-100"
               />
               <label className="absolute left-3 top-[-8px] text-xs bg-white px-1 text-gray-500">
                 To
@@ -324,7 +304,7 @@ const InstructorLearnerPayments = () => {
       </div>
 
       {loading ? (
-        <div className="font-semibold text-center text-blue-600">Loading...</div>
+        <div className="text-center font-semibold text-blue-600">Loading...</div>
       ) : (
         <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
           <table className="w-full text-sm text-left text-gray-500">
@@ -343,12 +323,14 @@ const InstructorLearnerPayments = () => {
               {payments.length > 0 ? (
                 payments.map((payment, index) => (
                   <tr key={payment._id} className="bg-white border-b">
-                    <td className="px-6 py-4">{(currentPage - 1) * itemsPerPage + index + 1}</td>
+                    <td className="px-6 py-4">
+                      {(currentPage - 1) * itemsPerPage + index + 1}
+                    </td>
                     <td className="px-6 py-4">
                       <img
                         src={`${URL}/api/image-proxy/${extractDriveFileId(payment.learner?.photo)}`}
                         alt={payment.learner?.fullName}
-                        className="object-cover w-10 h-10 rounded-full"
+                        className="w-10 h-10 rounded-full object-cover"
                       />
                     </td>
                     <td className="px-6 py-4">{payment.learner?.fullName}</td>

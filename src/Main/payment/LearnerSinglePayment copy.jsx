@@ -25,12 +25,10 @@ const LearnerSinglePayment = () => {
   const [payments, setPayments] = useState([]);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState("");
 
   const didInitFilters = useRef(false);
   const debounceRef = useRef(null);
   const controllerRef = useRef(null);
-  const prevSearchValueRef = useRef("");
 
   const formatDate = (date) => (date ? moment(date).format("YYYY-MM-DD") : "");
 
@@ -54,6 +52,7 @@ const LearnerSinglePayment = () => {
     if ((fromDate && !toDate) || (!fromDate && toDate)) return;
     if (fromDate && toDate && new Date(fromDate) > new Date(toDate)) return;
 
+    // Cancel previous request
     if (controllerRef.current) controllerRef.current.abort();
     const controller = new AbortController();
     controllerRef.current = controller;
@@ -80,13 +79,6 @@ const LearnerSinglePayment = () => {
         if (err.response?.status === 401) {
           clearAuthState();
           navigate("/");
-        } else {
-          const msg =
-            err.response?.data?.message ||
-            err.response?.data?.errors?.join(", ") ||
-            "Something went wrong!";
-          setErrorMsg(msg);
-          setTimeout(() => setErrorMsg(""), 4000);
         }
       }
     } finally {
@@ -94,7 +86,7 @@ const LearnerSinglePayment = () => {
     }
   };
 
-  // On first mount, initialize filters from URL
+  // ✅ First load: read URL, set filters (no API call)
   useEffect(() => {
     if (authLoading || !paymentId || didInitFilters.current) return;
 
@@ -115,12 +107,13 @@ const LearnerSinglePayment = () => {
     });
   }, [authLoading, paymentId]);
 
-  // Watch filters and trigger fetch
+  // ✅ Main trigger: when filters change (after initial), call API
   useEffect(() => {
     if (!didInitFilters.current || !paymentId) return;
 
     const { searchTerm, fromDate, toDate } = filters;
 
+    // Prevent invalid date range
     if ((fromDate && !toDate) || (!fromDate && toDate)) return;
     if (fromDate && toDate && new Date(fromDate) > new Date(toDate)) return;
 
@@ -128,23 +121,13 @@ const LearnerSinglePayment = () => {
 
     if (debounceRef.current) clearTimeout(debounceRef.current);
 
-    const trimmedSearch = searchTerm.trim();
-    const prev = prevSearchValueRef.current;
-
-    // Detect paste without debounce
-    const isPaste =
-      trimmedSearch.length > prev.length + 1 &&
-      trimmedSearch.includes(prev) &&
-      trimmedSearch.indexOf(prev) === 0;
-
-    prevSearchValueRef.current = trimmedSearch;
-
-    if (trimmedSearch && !isPaste) {
+    if (searchTerm.trim()) {
+      // Debounced API call for search
       debounceRef.current = setTimeout(() => {
         fetchPayments();
-      }, 1500);
+      }, 2000);
     } else {
-      fetchPayments(); // No debounce on paste or empty
+      fetchPayments(); // Immediate for other filters
     }
 
     return () => clearTimeout(debounceRef.current);
@@ -182,10 +165,6 @@ const LearnerSinglePayment = () => {
     <div className="p-4">
       <h3 className="mb-4 text-xl font-bold">Payment History</h3>
 
-      {errorMsg && (
-        <div className="p-2 mb-4 text-sm text-white bg-red-500 rounded">{errorMsg}</div>
-      )}
-
       <div className="flex flex-col justify-between gap-4 mb-4 md:flex-row">
         <input
           type="text"
@@ -217,9 +196,11 @@ const LearnerSinglePayment = () => {
           value={filters.toDate}
           onChange={handleChange("toDate")}
           disabled={!filters.fromDate}
-          min={filters.fromDate || undefined}
-          className="px-3 py-2 text-sm border border-gray-300 rounded-lg disabled:bg-gray-100 disabled:cursor-not-allowed"
-        />
+           min={filters.fromDate || undefined}
+             
+              className="py-2 text-sm text-gray-900 border border-gray-300 rounded-lg x-3 peer disabled:bg-gray-100 disabled:cursor-not-allowed"
+            />
+
       </div>
 
       {loading ? (
@@ -258,7 +239,6 @@ const LearnerSinglePayment = () => {
               )}
             </tbody>
           </table>
-
           {payments.length > 0 && (
             <Pagination
               CurrentPage={filters.currentPage}

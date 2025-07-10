@@ -9,7 +9,7 @@ import { useRole } from "../../Components/AuthContext/AuthContext";
 const LearnerSingleTest = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { role, user, setUser, setRole, clearAuthState } = useRole();
+      const {role, user,setUser,setRole,clearAuthState} =  useRole();
 
   const [tests, setTests] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -21,7 +21,6 @@ const LearnerSingleTest = () => {
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null); // for error message
 
   const searchDebounceRef = useRef(null);
   const controllerRef = useRef(null);
@@ -39,6 +38,7 @@ const LearnerSingleTest = () => {
     limit,
   }) => {
     const params = new URLSearchParams();
+
     if (search) params.set("search", search);
     if (testType) params.set("testType", testType);
     if (result) params.set("result", result);
@@ -46,6 +46,7 @@ const LearnerSingleTest = () => {
     if (toDate) params.set("todate", formatDate(toDate));
     if (page) params.set("page", page);
     if (limit) params.set("limit", limit);
+
     navigate({ search: params.toString() });
   };
 
@@ -60,7 +61,6 @@ const LearnerSingleTest = () => {
 
     try {
       setLoading(true);
-      setError(null);
 
       const response = await axios.get(`${URL}/api/tests/${user.user_id}`, {
         withCredentials: true,
@@ -79,32 +79,24 @@ const LearnerSingleTest = () => {
       setTests(response.data.tests || []);
       setTotalPages(response.data.totalPages || 1);
     } catch (error) {
-        if (axios.isCancel(error)) {
-    // ✅ Ignore abort/cancelled request silently
-    return;
-  }
-      if (
-        error.response &&
-        (error.response.status === 401 ||
-          error.response.data.message ===
-            "Credential Invalid or Expired Please Login Again")
-      ) {
-        setTimeout(() => {
-          clearAuthState();
-        }, 2000);
-      } else {
-        const errMsg =
-          error?.response?.data?.message || error.message || "Something went wrong";
-        setError(errMsg);
-        setTimeout(() => {
-          setError(null);
-        }, 4000);
-      }
+      // setErrors(error.message);
+          if (
+            error.response &&
+            (error.response.status === 401 ||
+              error.response.data.message === "Credential Invalid or Expired Please Login Again")
+          ) {
+            setTimeout(() => {
+             clearAuthState();
+              // navigate("/");
+            }, 2000);
+          }
+      
     } finally {
       setLoading(false);
     }
   };
 
+  // On first mount: sync from URL
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const search = params.get("search") || "";
@@ -138,16 +130,18 @@ const LearnerSingleTest = () => {
     if (!searchQuery) {
       fetchTests();
     } else {
-      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+      if (searchDebounceRef.current)
+        clearTimeout(searchDebounceRef.current);
 
       searchDebounceRef.current = setTimeout(() => {
         fetchTests();
-      }, 1500);
+      }, 2000);
     }
 
     return () => {
       if (controllerRef.current) controllerRef.current.abort();
-      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+      if (searchDebounceRef.current)
+        clearTimeout(searchDebounceRef.current);
     };
   }, [
     searchQuery,
@@ -162,16 +156,10 @@ const LearnerSingleTest = () => {
 
   const handleSearch = (e) => {
     const val = e.target.value;
-    const cleanVal =
-      val.length % 2 === 0 &&
-      val.substring(0, val.length / 2) === val.substring(val.length / 2)
-        ? val.substring(0, val.length / 2)
-        : val;
-
-    setSearchQuery(cleanVal);
+    setSearchQuery(val);
     setCurrentPage(1);
     updateURLParams({
-      search: cleanVal,
+      search: val,
       testType,
       result,
       fromDate,
@@ -179,24 +167,6 @@ const LearnerSingleTest = () => {
       page: 1,
       limit,
     });
-  };
-
-  const handlePasteSearch = (e) => {
-    const pastedText = e.clipboardData.getData("text");
-    setSearchQuery(pastedText);
-    setCurrentPage(1);
-
-    updateURLParams({
-      search: pastedText,
-      testType,
-      result,
-      fromDate,
-      toDate,
-      page: 1,
-      limit,
-    });
-
-    fetchTests(); // instant fetch on paste
   };
 
   const handleTestTypeChange = (e) => {
@@ -273,18 +243,14 @@ const LearnerSingleTest = () => {
     });
   };
 
+
   return (
     <div className="p-6">
       <div className="flex flex-row items-center justify-between gap-4 mb-4">
-        <h3 className="text-xl font-bold text-center md:text-left">Test History</h3>
+        <h3 className="text-xl font-bold text-center md:text-left">
+          Test History
+        </h3>
       </div>
-
-      {error && (
-        <div className="mb-4 text-sm font-semibold text-center text-red-600">
-          {error}
-        </div>
-      )}
-
       <div className="flex flex-col justify-between gap-4 mb-4 md:flex-row md:items-center">
         <div className="relative w-full md:w-64">
           <svg
@@ -295,7 +261,11 @@ const LearnerSingleTest = () => {
             viewBox="0 0 24 24"
             xmlns="http://www.w3.org/2000/svg"
           >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M21 21l-4.35-4.35"
+            />
             <circle cx="10" cy="10" r="7" />
           </svg>
 
@@ -305,7 +275,6 @@ const LearnerSingleTest = () => {
             placeholder="Search..."
             value={searchQuery}
             onChange={handleSearch}
-            onPaste={handlePasteSearch}
           />
 
           {searchQuery && (
@@ -320,7 +289,6 @@ const LearnerSingleTest = () => {
                   fromDate,
                   toDate,
                   page: 1,
-                  limit,
                 });
               }}
             >
@@ -331,7 +299,12 @@ const LearnerSingleTest = () => {
                 viewBox="0 0 24 24"
                 xmlns="http://www.w3.org/2000/svg"
               >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
           )}
@@ -349,7 +322,12 @@ const LearnerSingleTest = () => {
               <option value="Theory Test">Theory Test</option>
               <option value="Practical Test">Practical Test</option>
             </select>
-            <label htmlFor="floating_testType" className="absolute text-xs left-3 top-[-8px] bg-white px-1 text-gray-500">
+            <label
+              htmlFor="floating_testType"
+              className={`absolute text-xs left-3 top-[-8px] bg-white px-1 text-gray-500 peer-focus:text-blue-600 ${
+                testType ? "text-blue-600" : ""
+              }`}
+            >
               Test Type
             </label>
           </div>
@@ -366,7 +344,12 @@ const LearnerSingleTest = () => {
               <option value="Pass">Pass</option>
               <option value="Fail">Fail</option>
             </select>
-            <label htmlFor="floating_result" className="absolute text-xs left-3 top-[-8px] bg-white px-1 text-gray-500">
+            <label
+              htmlFor="floating_result"
+              className={`absolute text-xs left-3 top-[-8px] bg-white px-1 text-gray-500 peer-focus:text-blue-600 ${
+                result ? "text-blue-600" : ""
+              }`}
+            >
               Result Type
             </label>
           </div>
@@ -376,6 +359,7 @@ const LearnerSingleTest = () => {
               type="date"
               value={fromDate}
               onChange={handleFromDateChange}
+              onFocus={(event) => (event.nativeEvent.target.defaultValue = "")}
               className="w-full px-3 py-2 text-sm text-gray-900 border border-gray-300 rounded-lg peer"
             />
             <label className="absolute left-3 top-[-8px] text-xs bg-white px-1 text-gray-500">
@@ -388,10 +372,12 @@ const LearnerSingleTest = () => {
               type="date"
               value={toDate}
               onChange={handleToDateChange}
+              onFocus={(event) => (event.nativeEvent.target.defaultValue = "")}
               min={fromDate || undefined}
               disabled={!fromDate}
               className="w-full px-3 py-2 text-sm text-gray-900 border border-gray-300 rounded-lg peer disabled:bg-gray-100 disabled:cursor-not-allowed"
             />
+            
             <label className="absolute left-3 top-[-8px] text-xs bg-white px-1 text-gray-500">
               To
             </label>
@@ -400,16 +386,19 @@ const LearnerSingleTest = () => {
       </div>
 
       {loading ? (
-        <div className="font-semibold text-center text-blue-600">Loading...</div>
+        <div className="font-semibold text-center text-blue-600">
+          Loading...
+        </div>
       ) : tests.length === 0 ? (
         <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
-          <table className="w-full text-sm text-center text-gray-500">
-            <thead className="text-sm text-gray-700 bg-gray-50">
+          <table className="w-full text-sm text-center text-gray-500 dark:text-gray-400">
+            <thead className="text-sm text-gray-700 bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
               <tr className="bg-gray-100">
                 <th className="px-4 py-2">S.No</th>
                 <th className="px-4 py-2">Test Type</th>
                 <th className="px-4 py-2">Date</th>
                 <th className="px-4 py-2">Result</th>
+                <th className="px-4 py-2">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -435,10 +424,17 @@ const LearnerSingleTest = () => {
               </thead>
               <tbody>
                 {tests.map((test, index) => (
-                  <tr key={test._id} className="bg-white border-b">
-                    <td className="px-6 py-4">{(currentPage - 1) * limit + index + 1}</td>
+                  <tr
+                    key={test._id}
+                    className="bg-white border-b dark:bg-gray-800 dark:border-gray-700"
+                  >
+                    <td className="px-6 py-4">
+                      {(currentPage - 1) * limit + index + 1}
+                    </td>
                     <td className="px-6 py-4">{test.testType}</td>
-                    <td className="px-6 py-4">{moment(test.date).format("DD-MM-YYYY")}</td>
+                    <td className="px-6 py-4">
+                      {moment(test.date).format("DD-MM-YYYY")}
+                    </td>
                     <td
                       className={`px-6 py-4 ${
                         test.result === "Pass"

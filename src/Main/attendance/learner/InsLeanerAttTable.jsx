@@ -4,48 +4,42 @@ import axios from "axios";
 import moment from "moment";
 import Pagination from "../../../Components/Pagination";
 import { extractDriveFileId } from "../../../Components/ImageProxyRouterFunction/funtion.js";
-import { useRole  } from "../../../Components/AuthContext/AuthContext";
+import { useRole } from "../../../Components/AuthContext/AuthContext";
 import { URL } from "../../../App";
 
 const InsLearnerAttTable = () => {
   const navigate = useNavigate();
   const location = useLocation();
-   const {role, user,setUser,setRole,clearAuthState} =  useRole();
+  const { user, clearAuthState } = useRole();
   const instructorId = user?.user_id;
 
   const [attendanceData, setAttendanceData] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [fromDate, setFromDate] = useState("");
-  const [toDate, setToDate] = useState(new Date().toISOString().split("T")[0]);
   const [classType, setClassType] = useState("");
   const [date, setDate] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const limit = 10;
 
+  const limit = 10;
   const abortControllerRef = useRef(null);
   const debounceTimeoutRef = useRef(null);
 
-  const updateURLParams = (paramsToUpdate) => {
+  const updateURLParams = (paramsToUpdate = {}) => {
     const current = new URLSearchParams(location.search);
     const newParams = new URLSearchParams();
 
     const {
       search = debouncedSearch,
-      fromdate = fromDate,
-      todate = toDate,
       date: selectedDate = date,
       page = currentPage,
       classType: selectedClassType = classType,
     } = paramsToUpdate;
 
     if (search?.trim()) newParams.set("search", search.trim());
-    if (fromdate) newParams.set("fromdate", fromdate);
-    if (todate) newParams.set("todate", todate);
-    if (selectedDate) newParams.set("date", selectedDate);
+    if (selectedDate?.trim()) newParams.set("date", selectedDate.trim());
     if (selectedClassType) newParams.set("classType", selectedClassType);
     if (page > 1) newParams.set("page", page);
 
@@ -62,12 +56,11 @@ const InsLearnerAttTable = () => {
       const params = {
         page: currentPage,
         limit,
-        search: debouncedSearch,
-        classType,
-        fromdate: fromDate,
-        todate: toDate,
-        date,
       };
+
+      if (debouncedSearch?.trim()) params.search = debouncedSearch.trim();
+      if (classType?.trim()) params.classType = classType.trim();
+      if (date?.trim()) params.date = date.trim();
 
       const res = await axios.get(`${URL}/api/learner-attendance/createdBy/${instructorId}`, {
         params,
@@ -78,32 +71,51 @@ const InsLearnerAttTable = () => {
       setAttendanceData(res.data.data || []);
       setTotalPages(res.data.totalPages || 1);
     } catch (err) {
-         if (!axios.isCancel(err)) {
-            setError(err.response.data.message);
-        if (err.response &&(err.response.status === 401 ||err.response.data.message === "Credential Invalid or Expired Please Login Again")) {
-            setTimeout(() => {
-              clearAuthState();
-              // navigate("/");
-            }, 3000);
-          }
+      if (!axios.isCancel(err)) {
+        setError(err.response?.data?.message || "Something went wrong.");
+        if (
+          err.response &&
+          (err.response.status === 401 ||
+            err.response.data.message === "Credential Invalid or Expired Please Login Again")
+        ) {
+          setTimeout(() => clearAuthState(), 3000);
         }
-      }finally {
+      }
+    } finally {
       setLoading(false);
     }
   };
 
+  // useEffect(() => {
+  //   const params = new URLSearchParams(location.search);
+
+  //   setSearchTerm(params.get("search") || "");
+  //   setDebouncedSearch(params.get("search") || "");
+  //   setDate(params.get("date") || "");
+  //   setClassType(params.get("classType") || "");
+  //   setCurrentPage(parseInt(params.get("page") || "1", 10));
+  // }, [location.search]);
+
   useEffect(() => {
-    const params = new URLSearchParams(location.search);
+  const params = new URLSearchParams(location.search);
+  const urlDate = params.get("date");
 
-    setSearchTerm(params.get("search") || "");
-    setDebouncedSearch(params.get("search") || "");
-    setFromDate(params.get("fromdate") || "");
-    setToDate(params.get("todate") || new Date().toISOString().split("T")[0]);
-    setDate(params.get("date") || "");
-    setClassType(params.get("classType") || "");
-    setCurrentPage(parseInt(params.get("page") || "1", 10));
-  }, [location.search]);
+  const today = new Date().toISOString().split("T")[0];
 
+  setSearchTerm(params.get("search") || "");
+  setDebouncedSearch(params.get("search") || "");
+  setClassType(params.get("classType") || "");
+  setCurrentPage(parseInt(params.get("page") || "1", 10));
+
+  if (urlDate) {
+    setDate(urlDate);
+  } else {
+    setDate(today);
+    updateURLParams({ date: today, page: 1 }); // <-- Auto-set URL on first load
+  }
+}, [location.search]);
+
+  // Debounce only search input
   useEffect(() => {
     if (debounceTimeoutRef.current) clearTimeout(debounceTimeoutRef.current);
 
@@ -116,16 +128,30 @@ const InsLearnerAttTable = () => {
     return () => clearTimeout(debounceTimeoutRef.current);
   }, [searchTerm]);
 
+  // Trigger API on search/classType/date/page
   useEffect(() => {
     if (!instructorId) return;
     if (abortControllerRef.current) abortControllerRef.current.abort();
+
     const controller = new AbortController();
     abortControllerRef.current = controller;
     fetchAttendance(controller.signal);
-    return () => controller.abort();
-  }, [debouncedSearch, fromDate, toDate, classType, date, currentPage]);
 
-  const handleSearchChange = (e) => setSearchTerm(e.target.value);
+    return () => controller.abort();
+  }, [debouncedSearch, classType, date, currentPage]);
+
+  const handleSearchChange = (e) => {
+    const value = e.target.value;
+    setSearchTerm(value);
+
+    // instant fetch on paste
+    if (e.nativeEvent.inputType === "insertFromPaste") {
+      if (debounceTimeoutRef.current) clearTimeout(debounceTimeoutRef.current);
+      setDebouncedSearch(value);
+      setCurrentPage(1);
+      updateURLParams({ search: value, page: 1 });
+    }
+  };
 
   const handleClassTypeChange = (e) => {
     const value = e.target.value;
@@ -147,19 +173,20 @@ const InsLearnerAttTable = () => {
       updateURLParams({ page });
     }
   };
+
   return (
     <div className="p-4">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+      <div className="flex flex-col gap-4 mb-4 md:flex-row md:items-center md:justify-between">
         <h3 className="text-xl font-bold text-center md:text-left">Learner Attendance Details</h3>
         <button
           onClick={() => navigate("/instructor/attendance/add")}
-          className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition w-full md:w-auto"
+          className="w-full px-4 py-2 text-white transition bg-blue-500 rounded-md hover:bg-blue-600 md:w-auto"
         >
           Mark
         </button>
       </div>
 
-      <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-4">
+      <div className="flex flex-col gap-4 mb-4 md:flex-row md:items-end md:justify-between">
         <div className="relative w-full md:max-w-md lg:max-w-sm">
           <svg
             className="absolute left-3 top-2.5 text-gray-400 w-5 h-5"
@@ -167,7 +194,6 @@ const InsLearnerAttTable = () => {
             stroke="currentColor"
             strokeWidth="2"
             viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg"
           >
             <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35" />
             <circle cx="10" cy="10" r="7" />
@@ -175,7 +201,7 @@ const InsLearnerAttTable = () => {
 
           <input
             type="text"
-            className="w-full border border-gray-300 text-gray-900 text-sm rounded-lg pl-10 py-2"
+            className="w-full py-2 pl-10 text-sm text-gray-900 border border-gray-300 rounded-lg"
             placeholder="Search..."
             value={searchTerm}
             onChange={handleSearchChange}
@@ -183,11 +209,11 @@ const InsLearnerAttTable = () => {
 
           {searchTerm && (
             <button
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-sm text-gray-600 hover:text-blue-500"
+              className="absolute text-sm text-gray-600 transform -translate-y-1/2 right-3 top-1/2 hover:text-blue-500"
               onClick={() => {
                 setSearchTerm("");
                 setDebouncedSearch("");
-                updateURLParams({ search: "", fromdate: fromDate, todate: toDate, page: 1 });
+                updateURLParams({ search: "", date, page: 1 });
                 setCurrentPage(1);
               }}
             >
@@ -198,11 +224,11 @@ const InsLearnerAttTable = () => {
           )}
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
+        <div className="flex flex-col w-full gap-4 sm:flex-row md:w-auto">
           <div className="relative w-full sm:w-48">
             <select
               id="floating_class"
-              className="peer block w-full text-sm text-gray-900 bg-transparent rounded-lg border border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 px-3 py-2"
+              className="block w-full px-3 py-2 text-sm text-gray-900 bg-transparent border border-gray-300 rounded-lg appearance-none peer focus:outline-none focus:ring-0 focus:border-blue-600"
               value={classType}
               onChange={handleClassTypeChange}
             >
@@ -225,8 +251,7 @@ const InsLearnerAttTable = () => {
               type="date"
               value={date}
               onChange={handleDateChange}
-              onFocus={(e) => (e.nativeEvent.target.defaultValue = "")}
-              className="peer border border-gray-300 text-gray-900 text-sm rounded-lg px-3 py-2 w-full"
+              className="w-full px-3 py-2 text-sm text-gray-900 border border-gray-300 rounded-lg peer"
             />
             <label className="absolute left-3 top-[-8px] text-xs bg-white px-1 text-gray-500">Date</label>
           </div>
@@ -234,7 +259,7 @@ const InsLearnerAttTable = () => {
       </div>
 
       {loading ? (
-        <div className="text-center font-semibold text-blue-600">Loading...</div>
+        <div className="font-semibold text-center text-blue-600">Loading...</div>
       ) : (
         <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
           <table className="w-full text-sm text-left text-gray-500">
@@ -260,27 +285,21 @@ const InsLearnerAttTable = () => {
                       <img
                         src={`${URL}/api/image-proxy/${extractDriveFileId(item?.learner?.photo)}`}
                         alt={item.learner.fullName}
-                        className="w-16 h-16 object-cover rounded-full border-4 border-white shadow-md"
+                        className="object-cover w-16 h-16 border-4 border-white rounded-full shadow-md"
                       />
                     </td>
                     <td className="px-6 py-4">{item.learner?.fullName}</td>
                     <td className="px-6 py-4">{item.learner?.admissionNumber}</td>
                     <td className="px-6 py-4">{item.course?.courseName}</td>
                     <td className="px-6 py-4">{item.classType}</td>
-                    <td className="px-6 py-4">
-                      {item?.date ? moment(item.date).format("DD-MM-YYYY") : "N/A"}
-                    </td>
-                    <td className="px-6 py-4">
-                      {item.checkIn ? moment(item.checkIn).format("hh:mm A") : "-"}
-                    </td>
-                    <td className="px-6 py-4">
-                      {item.checkOut ? moment(item.checkOut).format("hh:mm A") : "-"}
-                    </td>
+                    <td className="px-6 py-4">{item?.date ? moment(item.date).format("DD-MM-YYYY") : "N/A"}</td>
+                    <td className="px-6 py-4">{item.checkIn ? moment(item.checkIn).format("hh:mm A") : "-"}</td>
+                    <td className="px-6 py-4">{item.checkOut ? moment(item.checkOut).format("hh:mm A") : "-"}</td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan="9" className="text-center text-red-600 py-6">
+                  <td colSpan="9" className="py-6 text-center text-red-600">
                     Attendance not found
                   </td>
                 </tr>

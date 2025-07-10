@@ -105,8 +105,8 @@ const SingleAttendance = () => {
 
   return (
     <div className="p-4">
-      <div className="flex flex-row justify-between items-center gap-4 mb-4">
-        <h3 className="text-base font-semibold">Attendance History</h3>
+      <div className="flex flex-row items-center justify-between gap-4 mb-4">
+        <h3 className="text-base font-semibold">Attendance  History</h3>
         <FaSyncAlt
           className="text-blue-500 cursor-pointer hover:text-blue-600"
           onClick={handleRefresh}
@@ -115,7 +115,7 @@ const SingleAttendance = () => {
         />
       </div>
 
-      <div className="mb-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div className="flex flex-col gap-4 mb-4 md:flex-row md:items-center md:justify-between">
         <div className="relative w-full md:w-1/3">
           <svg
             className="absolute left-3 top-2.5 text-gray-400 w-5 h-5"
@@ -134,18 +134,18 @@ const SingleAttendance = () => {
           </svg>
           <input
             type="search"
-            className="w-full border border-gray-300 text-gray-900 text-sm rounded-lg pl-10 py-2"
+            className="w-full py-2 pl-10 text-sm text-gray-900 border border-gray-300 rounded-lg"
             placeholder="Search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
 
-        <div className="flex flex-col gap-4 w-full md:flex-row md:w-auto md:items-center md:space-x-4">
+        <div className="flex flex-col w-full gap-4 md:flex-row md:w-auto md:items-center md:space-x-4">
           <div className="relative w-full sm:w-36">
             <select
               id="floating_class"
-              className="peer block w-full text-sm text-gray-900 bg-transparent rounded-lg border border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 px-3 py-2"
+              className="block w-full px-3 py-2 text-sm text-gray-900 bg-transparent border border-gray-300 rounded-lg appearance-none peer focus:outline-none focus:ring-0 focus:border-blue-600"
               value={classType}
               onChange={(e) => setClassType(e.target.value)}
             >
@@ -169,7 +169,7 @@ const SingleAttendance = () => {
               value={fromDate}
               onChange={(e) => setFromDate(e.target.value)}
               onFocus={(event) => (event.nativeEvent.target.defaultValue = "")}
-              className="peer border border-gray-300 text-gray-900 text-sm rounded-lg px-3 py-2"
+              className="px-3 py-2 text-sm text-gray-900 border border-gray-300 rounded-lg peer"
             />
             <label className="absolute left-3 top-[-8px] text-xs bg-white px-1 text-gray-500">
               From
@@ -181,7 +181,7 @@ const SingleAttendance = () => {
               value={toDate}
               onChange={(e) => setToDate(e.target.value)}
               onFocus={(event) => (event.nativeEvent.target.defaultValue = "")}
-              className="peer border border-gray-300 text-gray-900 text-sm rounded-lg px-3 py-2"
+              className="px-3 py-2 text-sm text-gray-900 border border-gray-300 rounded-lg peer"
             />
             <label className="absolute left-3 top-[-8px] text-xs bg-white px-1 text-gray-500">
               To
@@ -190,13 +190,13 @@ const SingleAttendance = () => {
         </div>
       </div>
       {loading ? (
-        <div className="text-center py-5 text-blue-600 font-semibold text-lg">
+        <div className="py-5 text-lg font-semibold text-center text-blue-600">
           Loading...
         </div>
       ) : (
         <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
           <table className="w-full text-sm text-gray-500">
-            <thead className="text-sm text-gray-700 text-left bg-gray-50">
+            <thead className="text-sm text-left text-gray-700 bg-gray-50">
               <tr>
                 <th className="px-6 py-4">S.No</th>
                 <th className="px-6 py-4">Course Type</th>
@@ -211,7 +211,7 @@ const SingleAttendance = () => {
                 <tr>
                   <td
                     colSpan="6"
-                    className="text-center text-red-600 py-6 bg-white"
+                    className="py-6 text-center text-red-600 bg-white"
                   >
                     Attendance not found
                   </td>
