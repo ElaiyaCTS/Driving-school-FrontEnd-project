@@ -249,7 +249,7 @@ function NewSidebar({ isOpen, onClose }) {
              {role === "learner" && (
                   <>
                     
-                    <li><Link onClick={handleLinkClick}  to="/learner/dashboard" className={`${isActive("/learner/dashboard")} flex items-center p-2 rounded-lg group`}><FaTachometerAlt className="text-xl" /><span className="ms-4">Dashboard</span></Link></li>
+                    <li><Link onClick={handleLinkClick}  to="/learner/LearnerDash" className={`${isActive("/learner/LearnerDash")} flex items-center p-2 rounded-lg group`}><FaTachometerAlt className="text-xl" /><span className="ms-4">Dashboard</span></Link></li>
                     <li><Link onClick={handleLinkClick} to="/learner/attendance" className={`${isActive("/learner/attendance")} flex items-center p-2 rounded-lg group`}><FaClipboardCheck className="text-xl" /><span className="ms-4">Attendance</span></Link></li>
                     <li><Link onClick={handleLinkClick} to="/learner/payment" className={`${isActive("/learner/payment")} flex items-center p-2 rounded-lg group`}><FaMoneyCheckAlt className="text-xl" /><span className="ms-4">Payment</span></Link></li>
                     <li><Link onClick={handleLinkClick} to="/learner/test-details" className={`${isActive("/learner/test-details")} flex items-center p-2 rounded-lg group`}><FaFileAlt className="text-xl" /><span className="ms-4">Test Details</span></Link></li>
@@ -259,7 +259,7 @@ function NewSidebar({ isOpen, onClose }) {
                 )}
                 {role === "instructor" && (
                   <>
-                    <li><Link onClick={handleLinkClick} to="/instructor/dashboard" className={`${isActive("/instructor/dashboard")} flex items-center p-2 rounded-lg group`}><FaTachometerAlt className="text-xl" /><span className="ms-4">Dashboard</span></Link></li>
+                    <li><Link onClick={handleLinkClick} to="/instructor/instructorDash" className={`${isActive("/instructor/instructorDash")} flex items-center p-2 rounded-lg group`}><FaTachometerAlt className="text-xl" /><span className="ms-4">Dashboard</span></Link></li>
                     <li><Link onClick={handleLinkClick} to="/instructor/attendance/list" className={`${isActive("/instructor/attendance")} flex items-center p-2 rounded-lg group`}><FaClipboardCheck className="text-xl" /><span className="ms-4">Attendance</span></Link></li>
                     <li><Link onClick={handleLinkClick} to="/instructor/payment/list" className={`${isActive("/instructor/payment")} flex items-center p-2 rounded-lg group`}><FaMoneyCheckAlt className="text-xl" /><span className="ms-4">Payment</span></Link></li>
                     <li><Link onClick={handleLinkClick} to="/instructor/profile" className={`${isActive("/instructor/profile")} flex items-center p-2 rounded-lg group`}><FaUser className="text-xl" /><span className="ms-4">Profile</span></Link></li>
