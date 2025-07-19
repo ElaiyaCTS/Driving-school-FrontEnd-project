@@ -37,11 +37,11 @@ const LearnerDashboard = () => {
     "flex items-center justify-between p-4 border-2 border-blue-400 rounded-xl bg-white shadow-sm w-full";
 
   const labelClass = "text-gray-600 text-sm mt-1";
-  const valueClass = "text-3xl font-bold text-blue-900";
+  const valueClass = "text-3xl font-bold text-blue-600";
 
   return (
     <div className="p-4 bg-gray-50 min-h-screen">
-      <h2 className="text-2xl font-bold text-center text-blue-800 mb-6">
+      <h2 className="text-2xl font-bold text-center text-blue-600 mb-6">
         Learner Dashboard
       </h2>
 
