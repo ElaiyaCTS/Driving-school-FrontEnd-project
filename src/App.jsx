@@ -166,7 +166,7 @@ function App() {
           element={<ProtectedRoute allowedRoles={["learner"]}><Learner /></ProtectedRoute>}
         >
           <Route index element={<Navigate to="learnerDash" replace />} />
-          <Route path="learnerDash" element={<LearnerDash learnerId="1234" />} />
+          <Route path="learnerDash" element={<LearnerDash />} />
           <Route path="attendance" element={<LearnerSingleAttendance />} />
           <Route path="payment" element={<LearnerSinglePayment />} />
           <Route path="test-details" element={<LearnerSingleTest />} />
@@ -180,7 +180,7 @@ function App() {
           element={<ProtectedRoute allowedRoles={["instructor"]}><Instructor /></ProtectedRoute>}
         >
           <Route index element={<Navigate to="instructorDash" replace />} />
-          <Route path="instructorDash" element={<InstructorDash instructorId="1234"/>} />
+          <Route path="instructorDash" element={<InstructorDash />} />
           <Route path="attendance" element={<AttendanceContainer />}>
             <Route path="list" element={<InsLearnerAttTable />} />
             <Route path="add" element={<InsMarkAtt />} />

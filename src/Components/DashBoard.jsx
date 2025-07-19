@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 const URL=import.meta.env.VITE_BACK_URL
+import {useRole} from './AuthContext/AuthContext.jsx';
 
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer,
@@ -11,6 +12,7 @@ import {
 import { ImBooks } from "react-icons/im";
 
 const DashboardAdmin = () => {
+  
   const [summary, setSummary] = useState({
     totalLearners: 0,
     activeLearners: 0,
@@ -26,7 +28,9 @@ const DashboardAdmin = () => {
   useEffect(() => {
     const fetchDashboard = async () => {
       try {
-        const res = await axios.get(`${URL}/api/dashboard/admin`);
+        const res = await axios.get(`${URL}/api/dashboard/admin`,{
+           withCredentials: true,
+        });
         const data = res.data;
 
         setSummary({
