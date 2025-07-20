@@ -6,22 +6,22 @@ import {
 
 const InstructorDashboard = ({ instructorId }) => {
   const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    const fetchDashboard = async () => {
-      try {
-        const res = await axios.get(`/api/dashboard/instructor/${instructorId}`);
-        setData(res.data);
-      } catch (err) {
-        console.error('Error loading instructor dashboard:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
+  // useEffect(() => {
+  //   const fetchDashboard = async () => {
+  //     try {
+  //       const res = await axios.get(`/api/dashboard/instructor/${instructorId}`);
+  //       setData(res.data);
+  //     } catch (err) {
+  //       console.error('Error loading instructor dashboard:', err);
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
 
-    if (instructorId) fetchDashboard();
-  }, [instructorId]);
+  //   if (instructorId) fetchDashboard();
+  // }, [instructorId]);
 
   const cardClass =
     "flex items-center justify-between p-4 border-2 border-indigo-400 rounded-xl bg-white shadow-sm w-full";

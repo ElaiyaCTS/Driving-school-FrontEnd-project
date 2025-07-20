@@ -11,7 +11,9 @@ const Instructor = () => {
    <>
       <Navbar setSidebarOpen={setSidebarOpen} />
       <section className="flex w-full h-full">
+        <div>
         <NewSideBar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+          </div>
         <div className="w-full min-h-full mt-20 overflow-hidden">
           <Outlet />
         </div>
