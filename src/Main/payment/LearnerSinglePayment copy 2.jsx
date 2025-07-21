@@ -178,143 +178,134 @@ const LearnerSinglePayment = () => {
     setFilters((prev) => ({ ...prev, currentPage: page }));
   };
 
- return (
-  <div className="p-4">
-    <h3 className="mb-4 text-xl font-bold">Payment History</h3>
+  return (
+    <div className="p-4">
+      <h3 className="mb-4 text-xl font-bold">Payment   History</h3>
 
-    {errorMsg && (
-      <div className="p-2 mb-4 text-sm text-white bg-red-500 rounded">
-        {errorMsg}
-      </div>
-    )}
+      {errorMsg && (
+        <div className="p-2 mb-4 text-sm text-white bg-red-500 rounded">{errorMsg}</div>
+      )}
 
-    {/* Search and Filters */}
-    <div className="flex flex-col gap-4 mb-4 md:flex-row md:items-end md:justify-between">
-      
-      {/* Search Box */}
-      <div className="relative w-full md:max-w-md">
-        <svg
-          className="absolute left-3 top-3 text-gray-400 w-5 h-5"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          viewBox="0 0 24 24"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35" />
-          <circle cx="10" cy="10" r="7" />
-        </svg>
+           <div className="flex flex-col gap-4 mb-4 md:flex-row md:items-center md:justify-between">
+
+           <div className="relative w-full md:max-w-md">
+            <svg
+            className="absolute left-3 top-2.5 text-gray-400 w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35" />
+            <circle cx="10" cy="10" r="7" />
+          </svg>
         <input
           type="text"
           placeholder="Search..."
           value={filters.searchTerm}
           onChange={handleChange("searchTerm")}
-          className="w-full py-2 pl-10 pr-4 text-sm text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring focus:border-blue-300"
+                    className="w-full py-2 pl-10 text-sm text-gray-900 border border-gray-300 rounded-lg"
+
         />
-      </div>
+        </div>
 
-      {/* Filters */}
-      <div className="flex flex-col gap-4 md:flex-row w-full md:w-auto">
-        {/* Payment Method */}
-        <div className="relative w-full md:w-40">
-          <select
-            value={filters.paymentMethod}
-            onChange={handleChange("paymentMethod")}
-            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg appearance-none focus:outline-none focus:ring focus:border-blue-300"
-          >
-            <option value="">All</option>
-            <option value="UPI">UPI</option>
-            <option value="Cash">Cash</option>
-          </select>
+        <div  className="flex flex-col w-full md:justify-between gap-4   md:flex-row md:min-w-max ">
+          <div className="relative w-full md:w-40 ">
+
+        <select
+          value={filters.paymentMethod}
+          onChange={handleChange("paymentMethod")}
+          className="px-3 py-2 w-36 text-sm border border-gray-300 rounded-lg"
+        >
+          <option value="">All</option>
+          <option value="UPI">UPI</option>
+          <option value="Cash">Cash</option>
+        </select>
           <label
-            htmlFor="floating_payment"
-            className={`absolute text-xs left-3 top-[-8px] bg-white px-1 text-gray-500 ${
-              filters.paymentMethod ? "text-blue-600" : ""
-            }`}
-          >
-            Payment
-          </label>
-        </div>
-
-        {/* From Date */}
-        <div className="relative w-full md:w-40">
-          <input
-            type="date"
-            value={filters.fromDate}
-            onChange={handleChange("fromDate")}
-            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring focus:border-blue-300"
-          />
-          <label className="absolute left-3 top-[-8px] text-xs bg-white px-1 text-gray-500">
-            From
-          </label>
-        </div>
-
-        {/* To Date */}
-        <div className="relative w-full md:w-40">
-          <input
-            type="date"
-            value={filters.toDate}
-            onChange={handleChange("toDate")}
-            disabled={!filters.fromDate}
-            min={filters.fromDate || undefined}
-            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg disabled:bg-gray-100 disabled:cursor-not-allowed focus:outline-none focus:ring focus:border-blue-300"
-          />
-          <label className="absolute left-3 top-[-8px] text-xs bg-white px-1 text-gray-500">
-            To
-          </label>
-        </div>
-      </div>
+              htmlFor="floating_class"
+              className={`absolute text-xs left-3 top-[-8px] bg-white px-1 text-gray-500 peer-focus:text-blue-600 ${
+                filters.paymentMethod ? "text-blue-600" : ""
+              }`}
+            >
+              Payment
+            </label>
+             </div>
+             <div className="relative w-full md:w-40">
+                     <input
+                       type="date"
+                       value={filters.fromDate}
+                       onChange={handleChange("fromDate")}
+                       className="px-3 py-2 w-36 text-sm border border-gray-300 rounded-lg"
+                     />
+                      <label className="absolute left-3 top-[-8px] text-xs bg-white px-1 text-gray-500">
+                           From
+                         </label>
+             </div>
+             
+             <div className="relative w-full md:w-40">
+                     <input
+                       type="date"
+                       value={filters.toDate}
+                       onChange={handleChange("toDate")}
+                       disabled={!filters.fromDate}
+                       min={filters.fromDate || undefined}
+                       className="px-3 py-2 w-36 text-sm border border-gray-300 rounded-lg disabled:bg-gray-100 disabled:cursor-not-allowed"
+                     />
+                     <label className="absolute left-3 top-[-8px] text-xs bg-white px-1 text-gray-500">
+                           To
+                         </label>
+                     </div>
+                     </div>
+                   </div>
+             
+                   {loading ? (
+                     <div className="text-center text-blue-600">Loading...</div>
+                   ) : (
+                     <div className="overflow-x-auto shadow-md sm:rounded-lg">
+                       <table className="w-full text-sm text-left text-gray-500">
+                         <thead className="text-sm text-gray-700 bg-gray-50">
+                           <tr>
+                             <th className="px-6 py-4">S.No</th>
+                             <th className="px-6 py-4">Payment Method</th>
+                             <th className="px-6 py-4">Amount ₹</th>
+                             <th className="px-6 py-4">Date</th>
+                           </tr>
+                         </thead>
+                         <tbody>
+                           {payments.length > 0 ? (
+                             payments.map((payment, index) => (
+                               <tr key={payment._id} className="bg-white border-b">
+                                 <td className="px-6 py-4">
+                                   {(filters.currentPage - 1) * limit + index + 1}
+                                 </td>
+                                 <td className="px-6 py-4">{payment.paymentMethod}</td>
+                                 <td className="px-6 py-4">{payment.amount}</td>
+                                 <td className="px-6 py-4">
+                                   {moment(payment.date).format("DD-MM-YYYY")}
+                                 </td>
+                               </tr>
+                             ))
+                           ) : (
+                             <tr>
+                               <td colSpan="4" className="py-4 text-center text-red-800">
+                                 Payments not found
+                               </td>
+                             </tr>
+                           )}
+                         </tbody>
+                       </table>
+             
+                       {payments.length > 0 && (
+                         <Pagination
+                           CurrentPage={filters.currentPage}
+                           TotalPages={totalPages}
+                           onPageChange={handlePageChange}
+                         />
+                       )}
+                     </div>
+                   )}
     </div>
-
-    {/* Table */}
-    {loading ? (
-      <div className="text-center text-blue-600">Loading...</div>
-    ) : (
-      <div className="overflow-x-auto shadow-md sm:rounded-lg">
-        <table className="w-full text-sm text-left text-gray-500">
-          <thead className="text-sm text-gray-700 bg-gray-50">
-            <tr>
-              <th className="px-6 py-4">S.No</th>
-              <th className="px-6 py-4">Payment Method</th>
-              <th className="px-6 py-4">Amount ₹</th>
-              <th className="px-6 py-4">Date</th>
-            </tr>
-          </thead>
-          <tbody>
-            {payments.length > 0 ? (
-              payments.map((payment, index) => (
-                <tr key={payment._id} className="bg-white border-b">
-                  <td className="px-6 py-4">
-                    {(filters.currentPage - 1) * limit + index + 1}
-                  </td>
-                  <td className="px-6 py-4">{payment.paymentMethod}</td>
-                  <td className="px-6 py-4">{payment.amount}</td>
-                  <td className="px-6 py-4">
-                    {moment(payment.date).format("DD-MM-YYYY")}
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan="4" className="py-4 text-center text-red-800">
-                  Payments not found
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-
-        {payments.length > 0 && (
-          <Pagination
-            CurrentPage={filters.currentPage}
-            TotalPages={totalPages}
-            onPageChange={handlePageChange}
-          />
-        )}
-      </div>
-    )}
-  </div>
-);
-
+  );
 };
 
 export default LearnerSinglePayment;

@@ -177,7 +177,7 @@ const InsLearnerAttTable = () => {
   return (
     <div className="p-4">
       <div className="flex flex-col gap-4 mb-4 md:flex-row md:items-center md:justify-between">
-        <h3 className="text-xl font-bold text-center md:text-left">Learner Attendance Details</h3>
+        <h3 className="text-xl font-bold text-center md:text-left">Learner  Attendance Details</h3>
         <button
           onClick={() => navigate("/instructor/attendance/add")}
           className="w-full px-4 py-2 text-white transition bg-blue-500 rounded-md hover:bg-blue-600 md:w-auto"

@@ -92,7 +92,7 @@ const SingleCourseAssign = () => {
 
   return (
     <>
-      <div className="p-4">
+      <div className="   p-4">
         <div className="flex flex-row items-center justify-between gap-4 mb-4">
           <h3 className="text-base font-semibold">Course History</h3>
           <FaSyncAlt
@@ -151,7 +151,7 @@ const SingleCourseAssign = () => {
           </div>
 
           <div className="flex flex-col w-full gap-3 md:flex-row md:w-auto">
-            <div className="relative w-full md:w-48">
+            <div className="relative w-full lg:w-48">
               <select
                 id="floating_status_one"
                 className="block w-full px-3 py-2 text-sm text-gray-900 bg-transparent border border-gray-300 rounded-lg appearance-none peer focus:outline-none focus:ring-0 focus:border-blue-600"

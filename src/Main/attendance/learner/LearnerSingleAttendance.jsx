@@ -265,7 +265,7 @@ const LearnerSingleAttendance = () => {
     <div className="p-4">
       <div className="flex flex-row items-center justify-between gap-4 mb-4">
         <h3 className="text-xl font-bold text-center md:text-left">
-          Attendance History
+          Attendance  History
         </h3>
       </div>
 

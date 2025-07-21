@@ -12,7 +12,7 @@ function Navbar({ setSidebarOpen,sidebarOpen }) {
   const { role, user, clearAuthState } = useRole();
   const navigate = useNavigate();
 const [img, setImg] = useState(null);
-  const [isLogin, setIsLogin] = useState({ Name: null, photo: null });
+  const [isLogin, setIsLogin] = useState({ Name: null, photo: null,role:role||null });
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [showImagePreview, setShowImagePreview] = useState(false);
@@ -64,7 +64,7 @@ const [img, setImg] = useState(null);
 
               //  disabled={sidebarOpen} 
                 type="button"
-                className="inline-flex items-center p-2 text-sm text-gray-800 rounded-lg md:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:text-gray-400 dark:hover:bg-gray-700 dark:focus:ring-gray-600"
+                className="inline-flex items-center p-2 text-sm text-gray-800 rounded-lg lg:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:text-gray-400 dark:hover:bg-gray-700 dark:focus:ring-gray-600"
               >
                 <span className="sr-only">Open sidebar</span>
                 <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
@@ -75,7 +75,7 @@ const [img, setImg] = useState(null);
                   />
                 </svg>
               </button>):( <div
-                className="inline-flex items-center p-2 text-sm text-gray-500 rounded-lg md:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:text-gray-400 dark:hover:bg-gray-700 dark:focus:ring-gray-600"
+                className="inline-flex items-center p-2 text-sm text-gray-500 rounded-lg lg:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:text-gray-400 dark:hover:bg-gray-700 dark:focus:ring-gray-600"
               >
                 <span className="sr-only">Open sidebar</span>
                 <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
@@ -128,16 +128,19 @@ const [img, setImg] = useState(null);
                 )}
               </button>
               <div className="hidden px-1 sm:block" role="none">
-               <p className="text-sm font-medium text-gray-900 truncate dark:text-gray-300">
-                 {isLogin?.Name}
-               </p>
+               {/* <p className="text-sm font-medium text-gray-900 truncate dark:text-gray-300">
+                 {isLogin?.Name }
+               </p> */}
              </div>
 
 
               {dropdownOpen && (
                 <div className="absolute top-0 right-0 z-10 w-48 bg-white rounded-md shadow-lg mt-14 dark:bg-gray-700">
+                <div>
                   <div className="px-4 py-2 text-sm text-gray-700 dark:text-gray-200">
                     {isLogin?.Name}
+                  </div >
+                  <div className="px-4  text-sm text-gray-700 dark:text-gray-200"> {isLogin?.role}</div>
                   </div>
                   <button
                     onClick={() => {

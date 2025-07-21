@@ -64,7 +64,7 @@ const DashboardAdmin = () => {
   return (
     <div className="p-4 bg-gray-50 min-h-screen">
       {loading ? (
-        <p className="text-center text-blue-500 mt-10">Loading...</p>
+         <div className="py-5 text-lg font-semibold text-center text-blue-600">Loading...</div>
       ) : (
         <>
           {/* Summary Cards */}
@@ -108,9 +108,9 @@ const DashboardAdmin = () => {
 
           {/* Chart Section */}
           <div className="bg-white border border-blue-300 rounded-xl p-4">
-            <h3 className="text-lg font-bold text-blue-600 mb-4">Monthly Admissions</h3>
-            <div className="w-full max-w-full mx-auto h-[360px] rounded-md border border-blue-200 p-2">
-              <ResponsiveContainer width="100%" height="100%">
+            <h3 className="text-lg font-bold text-blue-600 mb-4"> Admissions</h3>
+            <div className="w-full max-w-full mx-auto h-[360px] rounded-md border border-blue-200 ">
+              <ResponsiveContainer  width="100%" height="100%">
                 <BarChart data={monthlyData} barSize={50}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="month" />

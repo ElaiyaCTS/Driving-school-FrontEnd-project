@@ -85,9 +85,11 @@ const LearnPreview = () => {
 
   if (loading) {
     return (
-      <div className="p-10 text-center text-lg font-medium text-gray-600">
-        Loading learner details...
-      </div>
+         <div className="py-5 text-lg font-semibold text-center text-blue-600">Loading...</div>
+
+      // <div className="p-10 text-center text-lg font-medium text-gray-600">
+      //   Loading learner details...
+      // </div>
     );
   }
 return (
@@ -112,7 +114,7 @@ return (
       </div>
 
       {/* Top Section: Profile + Info */}
-      <div className="  grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 ">
+      <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Profile Card */}
         <div className="m-5 w-full   bg-gray-300 border-2 rounded-lg min-h-[30rem] md:min-h-[30rem] flex items-center justify-center">
           <div className="relative w-full h-full flex flex-col just items-center bg-slate-50">

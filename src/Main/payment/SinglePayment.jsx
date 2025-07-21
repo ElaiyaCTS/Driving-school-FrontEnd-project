@@ -107,7 +107,7 @@ const SinglePayment = () => {
   return (
     <div className="p-4">
       <div className="flex flex-row justify-between items-center gap-4 mb-4">
-        <h3 className="text-base font-semibold">Payment History</h3>
+        <h3 className="text-base font-semibold">Payment  History</h3>
         <FaSyncAlt
           className="text-blue-500 cursor-pointer hover:text-blue-600"
           onClick={handleRefresh}

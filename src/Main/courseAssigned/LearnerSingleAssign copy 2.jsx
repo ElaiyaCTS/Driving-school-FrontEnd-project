@@ -8,8 +8,11 @@ import { useRole } from "../../Components/AuthContext/AuthContext";
 const LearnerSingleAssign = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useRole();
+  const { user, clearAuthState } = useRole();
+
   const controllerRef = useRef(null);
+  const debounceRef = useRef(null);
+  const skipNextEffectRef = useRef(false);
 
   const [assignments, setAssignments] = useState([]);
   const [search, setSearch] = useState("");
@@ -18,10 +21,10 @@ const LearnerSingleAssign = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
 
   const limit = 5;
 
-  // Sync state from URL on first load
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const searchFromURL = params.get("search") || "";
@@ -32,9 +35,8 @@ const LearnerSingleAssign = () => {
     setSearch(searchFromURL);
     setStatusOne(statusOneFromURL);
     setStatusTwo(statusTwoFromURL);
-    setCurrentPage(pageFromURL||1);
+    setCurrentPage(pageFromURL);
 
-    // Always include page and limit in URL
     updateURLParams({
       search: searchFromURL,
       statusOne: statusOneFromURL,
@@ -43,21 +45,16 @@ const LearnerSingleAssign = () => {
     });
   }, []);
 
-  // Update URL params
   const updateURLParams = ({ search, statusOne, statusTwo, page }) => {
     const params = new URLSearchParams();
-
     if (search) params.set("search", search);
     if (statusOne) params.set("statusOne", statusOne);
     if (statusTwo) params.set("statusTwo", statusTwo);
-
-    params.set("page", page || 1);   // Always include page
-    params.set("limit", limit);      // Always include limit
-
+    params.set("page", page || 1);
+    params.set("limit", limit);
     navigate({ search: params.toString() }, { replace: true });
   };
 
-  // Fetch data from API
   const fetchData = async (queryParams) => {
     if (!user?.user_id) return;
 
@@ -74,43 +71,68 @@ const LearnerSingleAssign = () => {
       setAssignments(response.data.assignments || []);
       setTotalPages(response.data.totalPages || 1);
     } catch (error) {
-      if (error.name !== "CanceledError") {
-        console.error("API Error:", error);
-      }
+      if (axios.isCancel(error) || error.name === "AbortError") return;
+      if (error?.response?.status === 401) return clearAuthState();
+
+      setErrorMsg("Something went wrong while fetching data.");
+      setTimeout(() => setErrorMsg(""), 4000);
     } finally {
       setLoading(false);
     }
   };
 
-  // Debounced fetch for search
-  const debounceRef = useRef(null);
-  useEffect(() => {
+  const handleFetch = (custom = {}) => {
+    const {
+      search: s = search,
+      statusOne: so = statusOne,
+      statusTwo: st = statusTwo,
+      page = currentPage,
+    } = custom;
+
     const queryParams = new URLSearchParams();
+    if (s) queryParams.set("search", s);
+    if (so) queryParams.set("statusOne", so);
+    if (st) queryParams.set("statusTwo", st);
+    queryParams.set("page", page);
+    queryParams.set("limit", limit);
 
-    if (search) queryParams.set("search", search);
-    if (statusOne) queryParams.set("statusOne", statusOne);
-    if (statusTwo) queryParams.set("statusTwo", statusTwo);
+    fetchData(queryParams.toString());
+  };
 
-    queryParams.set("page", currentPage); // Always include page
-    queryParams.set("limit", limit);      // Always include limit
-
-    if (search) {
-      debounceRef.current = setTimeout(() => {
-        fetchData(queryParams.toString());
-      }, 2000);
-    } else {
-      fetchData(queryParams.toString());
+  // Debounce only typing in search box
+  useEffect(() => {
+    if (skipNextEffectRef.current) {
+      skipNextEffectRef.current = false;
+      return;
     }
 
-    return () => clearTimeout(debounceRef.current);
-  }, [search, statusOne, statusTwo, currentPage]);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
 
-  // Handlers
+    debounceRef.current = setTimeout(() => {
+      handleFetch({ search });
+    }, 1500);
+
+    return () => clearTimeout(debounceRef.current);
+  }, [search]);
+
+  // Immediate fetch for status filters or page
+  useEffect(() => {
+    handleFetch({ search, statusOne, statusTwo, page: currentPage });
+  }, [statusOne, statusTwo, currentPage]);
+
   const handleSearchChange = (e) => {
     const value = e.target.value;
+    const isPaste = e?.nativeEvent?.inputType === "insertFromPaste";
+
     setSearch(value);
     setCurrentPage(1);
     updateURLParams({ search: value, statusOne, statusTwo, page: 1 });
+
+    if (isPaste) {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      skipNextEffectRef.current = true;
+      handleFetch({ search: value, statusOne, statusTwo, page: 1 });
+    }
   };
 
   const handleStatusOneChange = (e) => {
@@ -137,7 +159,7 @@ const LearnerSingleAssign = () => {
   return (
     <div className="p-4">
       <div className="flex flex-row items-center justify-between gap-4 mb-4">
-        <h3 className="text-xl font-bold">Course  History</h3>
+        <h3 className="text-xl font-bold">Course History</h3>
       </div>
 
       <div className="flex flex-col justify-between gap-4 mb-4 md:flex-row">
@@ -153,7 +175,12 @@ const LearnerSingleAssign = () => {
             <path stroke="currentColor" strokeWidth="2" d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z" />
           </svg>
           {search && (
-            <button className="absolute inset-y-0 text-gray-500 right-3" onClick={() => handleSearchChange({ target: { value: "" } })}>
+            <button
+              className="absolute inset-y-0 text-gray-500 right-3"
+              onClick={() =>
+                handleSearchChange({ target: { value: "" }, nativeEvent: {} })
+              }
+            >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 20 20">
                 <path stroke="currentColor" strokeWidth="2" d="M6 6l8 8M6 14L14 6" />
               </svg>
@@ -194,6 +221,8 @@ const LearnerSingleAssign = () => {
           </div>
         </div>
       </div>
+
+      {errorMsg && <div className="mb-2 text-sm text-center text-red-600">{errorMsg}</div>}
 
       {loading ? (
         <div className="font-semibold text-center text-blue-600">Loading...</div>
