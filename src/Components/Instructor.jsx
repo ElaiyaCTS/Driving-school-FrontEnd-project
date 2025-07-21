@@ -9,7 +9,7 @@ const Instructor = () => {
 
   return (
    <>
-      <Navbar setSidebarOpen={setSidebarOpen} />
+      <Navbar setSidebarOpen={setSidebarOpen} sidebarOpen={sidebarOpen} />
       <section className="flex w-full h-full">
         <div>
         <NewSideBar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />

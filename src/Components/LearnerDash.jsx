@@ -41,12 +41,13 @@ const LearnerDashboard = () => {
 
   return (
     <div className="p-4 bg-gray-50 min-h-screen">
-      <h2 className="text-2xl font-bold text-center text-blue-600 mb-6">
+      {/* <h2 className="text-2xl font-bold text-center text-blue-600 mb-6">
         Learner Dashboard
-      </h2>
+      </h2> */}
 
       {loading ? (
-        <p className="text-center text-gray-500">Loading...</p>
+                 <div className="py-5 text-lg font-semibold text-center text-blue-600">Loading...</div>
+
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
           <div className={cardClass}>

@@ -65,7 +65,7 @@ setToastOpen(true);
 // ✅ Auto-hide toast after 5s
 setTimeout(() => {
   setToastOpen(false);
-}, 5000);
+}, 3000);
 
 // ✅ Navigate after 1 second delay (optional: wait slightly so toast is seen)
 setTimeout(() => {
@@ -78,7 +78,7 @@ setTimeout(() => {
   } else {
     setErrors((prev) => ({ ...prev, login: "Invalid role detected." }));
   }
-}, 5000); // Enough delay to see toast appear
+}, 1000); // Enough delay to see toast appear
 // success toast visible 3s
     } catch (error) {
       console.error("Login Error:", error.response?.data || error);
