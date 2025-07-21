@@ -78,7 +78,7 @@ setTimeout(() => {
   } else {
     setErrors((prev) => ({ ...prev, login: "Invalid role detected." }));
   }
-}, 1000); // Enough delay to see toast appear
+}, 2000); // Enough delay to see toast appear
 // success toast visible 3s
     } catch (error) {
       console.error("Login Error:", error.response?.data || error);
