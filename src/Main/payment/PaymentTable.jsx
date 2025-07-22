@@ -377,7 +377,7 @@ const handleToDateChange = (e) => {
                     <th className="px-6 py-4">
                       {(currentPage - 1) * itemsPerPage + index + 1}
                     </th>
-                    <td className="px-6 py-4">
+                    <td className="px-2 py-4">
                       {/* <img
                       src={payment.learner.photo}
                       alt={payment.learner.fullName}

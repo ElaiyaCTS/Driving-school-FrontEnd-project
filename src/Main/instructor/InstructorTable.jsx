@@ -256,7 +256,7 @@ const InstructorTable = () => {
                       <th className="px-6 py-4 font-medium text-gray-900">
                         {index + 1}
                       </th>
-                      <td className="px-6 py-4">
+                      <td className="px-2 py-4">
                         <img
                           src={`${URL}/api/image-proxy/${extractDriveFileId(
                             instructor.photo
