@@ -1,32 +1,24 @@
 import { defineConfig } from "vite";
-import react from '@vitejs/plugin-react';
-import { resolve } from 'path';
+import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
-import tailwindcss from "@tailwindcss/vite";
-// export default defineConfig({
-//   plugins: [react()],
-// });
 
-// https://vite.dev/config/
-export default defineConfig({ 
-
+export default defineConfig({
   plugins: [
     react(),
-     tailwindcss(),
 
     VitePWA({
       strategies: "injectManifest",
       srcDir: "src",
-      filename: "service-worker.js", // Service worker source
+      filename: "service-worker.js",
       workbox: {
-        swSrc: "src/service-worker.js", // Custom service worker
-        swDest: "sw.js", // Output service worker to root
+        swSrc: "src/service-worker.js",
+        swDest: "sw.js",
       },
       devOptions: {
-        enabled: true, // Enable PWA in development mode
+        enabled: true,
         type: "module",
       },
-      scope: "/", // Set scope for the PWA
+      scope: "/",
       registerType: "autoUpdate",
       injectRegister: "auto",
       manifest: {
