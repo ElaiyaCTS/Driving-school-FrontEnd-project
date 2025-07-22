@@ -93,7 +93,7 @@ const LearnPreview = () => {
     );
   }
 return (
-  <div className="px-4 md:px-10 xl:px-20 py-6 bg-gray-50">
+  <div className="px-0 ">
     <section className="max-w-screen-2xl mx-auto flex flex-col bg-white p-5 mb-20 space-y-10 rounded-t-lg shadow-sm">
       {/* Header */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">

@@ -118,7 +118,7 @@ const DashboardAdmin = () => {
                   <Tooltip />
                   <Bar
                     dataKey="learners"
-                    fill="#4F46E5"
+                    fill="#1c64f2"
                     name="No. of Admissions"
                     radius={[2, 2, 0, 0]}
                   />

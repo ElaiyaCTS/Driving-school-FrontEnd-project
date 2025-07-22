@@ -34,7 +34,7 @@ const InstructorDashboard = ({ instructorId }) => {
                  <div className="py-5 text-lg font-semibold text-center text-blue-600">Loading...</div>
 
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4 mb-6">
           <div className={cardClass}>
             <div>
               <p className="text-3xl font-bold text-indigo-600">{data?.assignedLearners ?? '--'}</p>

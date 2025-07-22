@@ -136,12 +136,18 @@ const [img, setImg] = useState(null);
 
               {dropdownOpen && (
                 <div className="absolute top-0 right-0 z-10 w-48 bg-white rounded-md shadow-lg mt-14 dark:bg-gray-700">
-                <div>
-                  <div className="px-4 py-2 text-sm text-gray-700 dark:text-gray-200">
+                <div className=" py-2   border-b  border-gray-300">
+                  <div className=" px-4 py-1 text-sm font-medium text-gray-900 truncate dark:text-gray-300 ">
                     {isLogin?.Name}
+                    {/* <div className=" divide-y divide-gray-100 dark:divide-gray-600 block text-sm  text-gray-500 truncate dark:text-gray-400 "> {isLogin?.role}</div> */}
                   </div >
                   <div className="px-4  text-sm text-gray-700 dark:text-gray-200"> {isLogin?.role}</div>
                   </div>
+                  
+
+
+
+
                   <button
                     onClick={() => {
                       setDropdownOpen(false);

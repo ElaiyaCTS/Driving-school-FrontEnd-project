@@ -220,8 +220,7 @@ setTimeout(() => {
         {/* ✅ Error Toast */}
         {customError && (
           <div className="fixed top-5 right-5 z-50 w-[300px] max-w-xs p-4 text-white bg-red-600 rounded-md shadow-md animate-fade-in-down">
-            <div className="font-semibold text-white mb-1">Error</div>
-            <ul className="list-disc list-inside text-sm">
+            <ul className="list-none list-inside text-sm">
               {customError.map((msg, index) => (
                 <li key={index}>{msg}</li>
               ))}
@@ -231,7 +230,8 @@ setTimeout(() => {
 
         {/* ✅ Success Toast */}
         {toastOpen && (
-          <div className="fixed flex items-center justify-center w-full max-w-xs p-4 text-white bg-blue-700 rounded-md shadow-md top-10 right-5">
+          // <div className="fixed top-5 right-5 z-50 w-[300px] max-w-xs p-4 text-white bg-blue-700 rounded-md shadow-md animate-fade-in-down">
+           <div className="fixed flex items-center justify-center z-50 w-[300px] max-w-xs p-4 text-white bg-blue-700 rounded-md shadow-md  animate-fade-in-down top-5 right-5"> 
               <div className="inline-flex items-center justify-center w-8 h-8 text-green-700 bg-green-100 rounded-md">
                 <i className="fa-solid fa-check"></i>
               </div>
