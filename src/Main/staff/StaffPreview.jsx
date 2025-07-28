@@ -51,9 +51,8 @@ const StaffPreview = () => {
 
   if (loading) {
     return (
-      <div className="p-10 text-lg font-medium text-center text-gray-600">
-        Loading Staff details...
-      </div>
+               <div className="py-5 text-lg font-semibold text-center text-blue-600">Loading...</div>
+
     );
   }
 

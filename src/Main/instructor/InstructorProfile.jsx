@@ -43,34 +43,36 @@ const InstructorProfile = () => {
   }, [InstructorId, location.key]); // location.key ensures fetch on back navigation
 
   if (loading) {
-    return <div className="text-center text-lg">Loading...</div>;
+    return          <div className="py-5 text-lg font-semibold text-center text-blue-600">Loading...</div>
+
   }
 
   return (
     <div className="p-4">
       
-      <section className="flex flex-col bg-white p-5 mb-20 space-y-10 rounded-t-lg">
+      <section className="flex flex-col p-5 mb-20 space-y-10 bg-white rounded-t-lg">
         <div className="flex items-center justify-between w-full">
           <div className="flex items-center space-x-3">
             <button onClick={() => navigate(-1)}>
-              <i className="fa-solid fa-arrow-left-long text-xl"></i>
+              <i className="text-xl fa-solid fa-arrow-left-long"></i>
             </button>
-            <h3 className="text-xl sm:text-2xl font-bold">Instructor Details</h3>
+            <h3 className="text-xl font-bold sm:text-2xl">Instructor Details</h3>
           </div>
         </div>
 
-        <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid w-full grid-cols-1 gap-6 md:grid-cols-2">
           <div className="w-full h-full min-h-[20rem] md:min-h-[30rem] bg-gray-300 rounded-lg border-2">
-            <div className="relative h-full flex flex-col items-center bg-slate-50">
+            <div className="relative flex flex-col items-center h-full bg-slate-50">
               <div className="h-[30%] md:h-[40%] w-full flex flex-col items-center rounded-t-lg bg-blue-100"></div>
               <div className="h-[70%] md:h-[60%] flex flex-col items-center space-y-8 absolute top-[20%] md:top-[25%]">
                 <img
                   src={`${URL}/api/image-proxy/${extractDriveFileId(instructor.photo)}?t=${photoVersion}`}
                   alt={instructor.fullName}
-                  className="w-32 h-32 object-cover rounded-full border-4 border-white shadow-md"
+                          className="object-cover w-56 h-56 border-4 border-white rounded-full shadow-md"
+
                 />
                 <div className="flex flex-col items-center space-y-3">
-                  <h1 className="text-blue-600 text-lg font-semibold">
+                  <h1 className="text-lg font-semibold text-blue-600">
                     {instructor.fullName}
                   </h1>
                 </div>
@@ -78,8 +80,8 @@ const InstructorProfile = () => {
             </div>
           </div>
 
-          <div className="w-full md:col-span-3 space-y-5 h-full border-2 rounded-lg flex flex-col p-6 md:p-8">
-            <h3 className="text-base text-blue-600 font-semibold">Personal Details</h3>
+          <div className="flex flex-col w-full h-full p-6 space-y-5 border-2 rounded-lg md:col-span-3 md:p-8">
+            <h3 className="text-base font-semibold text-blue-600">Personal Details</h3>
             <table className="w-full text-xs text-left text-gray-500">
               <tbody>
                 {[
@@ -108,7 +110,7 @@ const InstructorProfile = () => {
           </div>
         </div>
 
-        <div className="w-full col-span-1 md:col-span-4 space-y-5 h-full border-2 rounded-lg flex flex-col p-6 md:p-8">
+        <div className="flex flex-col w-full h-full col-span-1 p-6 space-y-5 border-2 rounded-lg md:col-span-4 md:p-8">
           <section>
             <InstructorDashAttendance />
           </section>

@@ -48,9 +48,8 @@ const {role, user,setUser,setRole,clearAuthState} =  useRole();
 
     if (loading) {
     return (
-      <div className="p-10 text-center text-lg font-medium text-gray-600">
-        Loading Instructor details...
-      </div>
+              <div className="py-5 text-lg font-semibold text-center text-blue-600">Loading...</div>
+
     );
   }
 

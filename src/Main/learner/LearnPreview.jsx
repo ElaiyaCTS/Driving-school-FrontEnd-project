@@ -119,7 +119,7 @@ const LearnPreview = () => {
     return (
          <div className="py-5 text-lg font-semibold text-center text-blue-600">Loading...</div>
 
-      // <div className="p-10 text-center text-lg font-medium text-gray-600">
+      // <div className="p-10 text-lg font-medium text-center text-gray-600">
       //   Loading learner details...
       // </div>
     );
@@ -128,44 +128,44 @@ return (
   <div className="px-0 ">
         {errorMsg && <Toast message={errorMsg} />}
 
-    <section className="max-w-screen-2xl mx-auto flex flex-col bg-white p-5 mb-20 space-y-10 rounded-t-lg shadow-sm">
+    <section className="flex flex-col p-5 mx-auto mb-20 space-y-10 bg-white rounded-t-lg shadow-sm max-w-screen-2xl">
       {/* Header */}
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
         <div className="flex items-center space-x-3">
           <button onClick={() => navigate(-1)}>
-            <i className="fa-solid fa-arrow-left-long text-xl"></i>
+            <i className="text-xl fa-solid fa-arrow-left-long"></i>
           </button>
-          <h3 className="font-semibold text-2xl">Learner Details</h3>
+          <h3 className="text-2xl font-semibold">Learner Details</h3>
         </div>
         <button
           onClick={() =>
             navigate(`/admin/learner/${learner.admissionNumber}/${learner._id}/edit`)
           }
-          className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition"
+          className="px-4 py-2 text-white transition bg-blue-500 rounded-md hover:bg-blue-600"
         >
           Edit
         </button>
       </div>
 
       {/* Top Section: Profile + Info */}
-      <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid w-full grid-cols-1 gap-6 md:grid-cols-2">
         {/* Profile Card */}
-        <div className="m-5 w-full   bg-gray-300 border-2 rounded-lg min-h-[30rem] md:min-h-[30rem] flex items-center justify-center">
-          <div className="relative w-full h-full flex flex-col just items-center bg-slate-50">
+        <div className=" w-full   bg-gray-300 border-2 rounded-lg min-h-[30rem] md:min-h-[30rem] flex items-center justify-center">
+          <div className="relative flex flex-col items-center w-full h-full just bg-slate-50">
             <div className="h-[40%] md:h-[40%] w-full bg-blue-100 rounded-t-lg" />
             <div className="absolute top-[20%] md:top-[25%] flex flex-col items-center space-y-4">
               {profileImage && (
                 <img
                   src={profileImage}
                   alt={`${learner.fullName}'s profile`}
-                  className="w-56 h-56 rounded-full border-4 border-white shadow-md object-cover"
+                  className="object-cover w-56 h-56 border-4 border-white rounded-full shadow-md"
                 />
               )}
-              <div className="text-center space-y-2">
+              <div className="space-y-2 text-center">
                 <h1 className="text-lg font-semibold break-words">
                   {learner?.fullName}
                 </h1>
-                <h6 className="text-xs text-gray-700 font-medium break-words">
+                <h6 className="text-xs font-medium text-gray-700 break-words">
                   {learner?.admissionNumber}
                 </h6>
               </div>
@@ -174,20 +174,20 @@ return (
         </div>
 
         {/* Details + Dropdown */}
-        <div className="col-span-2 border-2 rounded-lg p-6 md:p-8 relative space-y-5">
+        <div className="relative col-span-2 p-6 space-y-5 border-2 rounded-lg md:p-8">
           <h3 className="text-lg font-semibold">Personal details</h3>
 
           <div className="absolute top-1 right-4">
             <button
               type="button"
               onClick={() => setIsOpen(!isOpen)}
-              className="flex items-center gap-2 h-10 md:h-10 w-32 md:w-full px-4 py-2 border border-gray-300 rounded-md bg-white text-sm text-gray-700 hover:bg-gray-50 shadow-sm"
+              className="flex items-center w-32 h-10 gap-2 px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm md:h-10 md:w-full hover:bg-gray-50"
             >
               Generate Form & Certificate
             </button>
 
             {isOpen && (
-              <div className="absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-md shadow-lg z-50">
+              <div className="absolute right-0 z-50 w-56 mt-2 bg-white border border-gray-200 rounded-md shadow-lg">
                 <div className="py-1">
                   {[
                     { label: "Form 14 Register", path: "/form" },
@@ -197,7 +197,7 @@ return (
                     <button
                       key={label}
                       onClick={() => handleNavigation(path, learner)}
-                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      className="block w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
                     >
                       {label}
                     </button>
@@ -207,7 +207,7 @@ return (
             )}
           </div>
 
-          <table className="w-full text-xs md:text-sm text-left text-gray-600">
+          <table className="w-full text-xs text-left text-gray-600 md:text-sm">
             <tbody>
               {personalDetails.map(({ label, value }) => (
                 <tr key={label} className="align-top">
@@ -225,7 +225,7 @@ return (
         (Component, index) => (
           <div
             key={index}
-            className="border-2 rounded-lg p-6 md:p-8 space-y-5"
+            className="p-6 space-y-5 border-2 rounded-lg md:p-8"
           >
             <section>
               <Component />

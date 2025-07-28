@@ -109,17 +109,17 @@ const LearnerProfile = () => {
         </div>
 
         <div className="grid w-full grid-cols-1 gap-6 md:grid-cols-2">
-          <div className="w-full h-full min-h-[20rem] md:min-h-[30rem] bg-gray-300 rounded-lg border-2">
-            <div className="relative flex flex-col items-center h-full overflow-hidden bg-slate-50">
-              <div className="h-[30%] md:h-[40%] w-full flex flex-col items-center rounded-t-lg bg-blue-100"></div>
-
-              <div className="h-[70%] md:h-[60%] flex flex-col items-center space-y-8 absolute inset-0 top-1/4 md:top-1/4">
+        <div className=" w-full   bg-gray-300 border-2 rounded-lg min-h-[30rem] md:min-h-[30rem] flex items-center justify-center">
+          <div className="relative flex flex-col items-center w-full h-full just bg-slate-50">
+            <div className="h-[40%] md:h-[40%] w-full bg-blue-100 rounded-t-lg" />
+            <div className="absolute top-[20%] md:top-[25%] flex flex-col items-center space-y-4">
                 <img
                   src={`${URL}/api/image-proxy/${extractDriveFileId(
                     learner.photo
                   )}?t=${Date.now()}`}
                   alt={learner.fullName}
-                  className="object-cover w-56 h-56 border-4 border-white rounded-full shadow-md"
+        className="object-cover w-56 h-56 border-4 border-white rounded-full shadow-md"
+
                 />
                 <div className="flex flex-col items-center space-y-3 text-center">
                   <h1 className="text-lg font-semibold break-words">

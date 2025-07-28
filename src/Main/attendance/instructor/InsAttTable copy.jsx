@@ -1,15 +1,16 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import { URL } from "../../../App";
 import moment from "moment";
 import Pagination from "../../../Components/Pagination";
 import { extractDriveFileId } from "../../../Components/ImageProxyRouterFunction/funtion.js";
-import { useRole } from "../../../Components/AuthContext/AuthContext";
+import { useRole } from "../../../Components/AuthContext/AuthContext"; // adjust path as needed
 
 const InsAttTable = () => {
   const navigate = useNavigate();
-  const { role, user, setUser, setRole, clearAuthState } = useRole();
+    const {role, user,setUser,setRole,clearAuthState} =  useRole();
+
   const location = useLocation();
   const today = new Date().toISOString().split("T")[0];
 
@@ -21,141 +22,217 @@ const InsAttTable = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
 
-  const controllerRef = useRef(null);
-  const errorTimeoutRef = useRef(null);
-  const lastPastedValue = useRef("");
   const itemsPerPage = 10;
 
   const updateURLParams = ({ search, status, fromdate, todate, page }) => {
     const params = new URLSearchParams(location.search);
-    if (search !== undefined) search ? params.set("search", search) : params.delete("search");
-    if (status !== undefined) status && status !== "All" ? params.set("status", status) : params.delete("status");
-    if (fromdate !== undefined) fromdate ? params.set("fromdate", fromdate) : params.delete("fromdate");
-    if (todate !== undefined) todate ? params.set("todate", todate) : params.delete("todate");
-    if (page !== undefined) page > 1 ? params.set("page", page) : params.delete("page");
 
-    navigate({ pathname: location.pathname, search: params.toString() });
-  };
-
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const searchFromURL = params.get("search") || "";
-    const statusFromURL = params.get("status") || "";
-    const fromDateFromURL = params.get("fromdate");
-    const toDateFromURL = params.get("todate");
-    const pageFromURL = parseInt(params.get("page")) || 1;
-
-    if (!fromDateFromURL || !toDateFromURL) {
-      const updatedParams = new URLSearchParams(location.search);
-      if (!fromDateFromURL) updatedParams.set("fromdate", today);
-      if (!toDateFromURL) updatedParams.set("todate", today);
-      navigate({ pathname: location.pathname, search: updatedParams.toString() }, { replace: true });
-      return;
+    if (search !== undefined) {
+      if (search) {
+        params.set("search", search);
+      } else {
+        params.delete("search");
+      }
     }
 
-    setSearchQuery(searchFromURL);
-    setSelectedStatus(statusFromURL);
-    setFromdate(fromDateFromURL);
-    setTodate(toDateFromURL);
-    setCurrentPage(pageFromURL);
-  }, [location.search]);
+    if (status !== undefined) {
+      if (status && status !== "All") {
+        params.set("status", status);
+      } else {
+        params.delete("status");
+      }
+    }
+
+    if (fromdate !== undefined) {
+      if (fromdate) {
+        params.set("fromdate", fromdate);
+      } else {
+        params.delete("fromdate");
+      }
+    }
+
+    if (todate !== undefined) {
+      if (todate) {
+        params.set("todate", todate);
+      } else {
+        params.delete("todate");
+      }
+    }
+
+    if (page !== undefined) {
+      if (page && page > 1) {
+        params.set("page", page);
+      } else {
+        params.delete("page");
+      }
+    }
+
+    navigate({
+      pathname: location.pathname,
+      search: params.toString(),
+    });
+  };
+
+useEffect(() => {
+  const params = new URLSearchParams(location.search);
+
+  const searchFromURL = params.get("search") || "";
+  const statusFromURL = params.get("status") || "";
+  const fromDateFromURL = params.get("fromdate");
+  const toDateFromURL = params.get("todate");
+  const pageFromURL = parseInt(params.get("page")) || 1;
+
+  // Auto-set missing fromdate/todate in URL
+  if (!fromDateFromURL || !toDateFromURL) {
+    const updatedParams = new URLSearchParams(location.search);
+
+    if (!fromDateFromURL) updatedParams.set("fromdate", today);
+    if (!toDateFromURL) updatedParams.set("todate", today);
+
+    navigate({
+      pathname: location.pathname,
+      search: updatedParams.toString(),
+    }, { replace: true }); // avoid pushing to history stack
+    return; // prevent setting states prematurely
+  }
+
+  setSearchQuery(searchFromURL);
+  setSelectedStatus(statusFromURL);
+  setFromdate(fromDateFromURL);
+  setTodate(toDateFromURL);
+  setCurrentPage(pageFromURL);
+}, [location.search]);
 
   useEffect(() => {
-    if (controllerRef.current) controllerRef.current.abort();
-    controllerRef.current = new AbortController();
+    const controller = new AbortController();
     let debounceTimer;
 
     const fetchData = async () => {
       setLoading(true);
+
       try {
+
+        const formattedFromDate = fromdate
+          ? moment(fromdate).format("YYYY-MM-DD")
+          : "";
+        const formattedToDate = todate
+          ? moment(todate).format("YYYY-MM-DD")
+          : "";
+
         const response = await axios.get(`${URL}/api/instructor-attendance`, {
           params: {
-            fromdate: moment(fromdate).format("YYYY-MM-DD"),
-            todate: moment(todate).format("YYYY-MM-DD"),
+            fromdate: formattedFromDate,
+            todate: formattedToDate,
             page: currentPage,
             limit: itemsPerPage,
             search: searchQuery,
             status: selectedStatus,
           },
           withCredentials: true,
-          signal: controllerRef.current.signal,
+          signal: searchQuery.trim() ? controller.signal : undefined,
         });
 
         setAttendances(response.data.data);
         setTotalPages(response.data.totalPages || 1);
-        setError("");
-      } catch (err) {
-        if (axios.isCancel(err)) return;
-        setError("Failed to fetch data.");
-        if (err.response?.status === 401 || err.response?.data?.message?.includes("Credential Invalid")) {
-          clearAuthState();
+      } catch (error) {
+        if (axios.isCancel(error) || error.name === "CanceledError") {
+          // Request was cancelled
+        } else {
+          console.error("Error fetching data:", error);
+          if (
+            error.response &&
+            (error.response.status === 401 ||
+              error.response.data.message === "Credential Invalid or Expired Please Login Again")
+          ) {
+            setTimeout(() => {
+              clearAuthState();
+              // navigate("/");
+            }, 2000);
+          }
         }
       } finally {
         setLoading(false);
-        if (errorTimeoutRef.current) clearTimeout(errorTimeoutRef.current);
-        errorTimeoutRef.current = setTimeout(() => setError(""), 4000);
       }
     };
 
     if (searchQuery.trim()) {
-      debounceTimer = setTimeout(fetchData, 1500);
+      debounceTimer = setTimeout(fetchData, 2000);
     } else {
       fetchData();
     }
 
     return () => {
-      clearTimeout(debounceTimer);
-      controllerRef.current?.abort();
+      if (debounceTimer) clearTimeout(debounceTimer);
+      if (searchQuery.trim()) controller.abort();
     };
   }, [searchQuery, selectedStatus, currentPage, fromdate, todate]);
 
-  useEffect(() => () => {
-    if (errorTimeoutRef.current) clearTimeout(errorTimeoutRef.current);
-  }, []);
-
-  const handleSearchInput = (e) => {
+  const handleSearchChange = (e) => {
     const value = e.target.value;
     setSearchQuery(value);
-    updateURLParams({ search: value, status: selectedStatus, fromdate, todate, page: 1 });
-    setCurrentPage(1);
-  };
-
-  const handleSearchPaste = (e) => {
-    const pastedText = e.clipboardData.getData("Text");
-    if (pastedText === lastPastedValue.current) return;
-    lastPastedValue.current = pastedText;
-    setSearchQuery(pastedText);
-    updateURLParams({ search: pastedText, status: selectedStatus, fromdate, todate, page: 1 });
+    updateURLParams({
+      search: value,
+      status: selectedStatus,
+      fromdate,
+      todate,
+      page: 1,
+    });
     setCurrentPage(1);
   };
 
   const handleStatusChange = (e) => {
     const value = e.target.value;
     setSelectedStatus(value);
-    updateURLParams({ search: searchQuery, status: value, fromdate, todate, page: 1 });
+    updateURLParams({
+      search: searchQuery,
+      status: value,
+      fromdate,
+      todate,
+      page: 1,
+    });
     setCurrentPage(1);
   };
 
   const handleFromDateChange = (e) => {
     const value = e.target.value;
     setFromdate(value);
-    updateURLParams({ search: searchQuery, status: selectedStatus, fromdate: value, todate, page: 1 });
+    updateURLParams({
+      search: searchQuery,
+      status: selectedStatus,
+      fromdate: value,
+      todate,
+      page: 1,
+    });
     setCurrentPage(1);
   };
 
+ 
+
+
   const handleToDateChange = (e) => {
-    const value = e.target.value;
+      const value = e.target.value;
     setTodate(value);
-    updateURLParams({ search: searchQuery, status: selectedStatus, fromdate, todate: value, page: 1 });
+    updateURLParams({
+      search: searchQuery,
+      status: selectedStatus,
+      fromdate,
+      todate: value,
+      page: 1,
+    });
     setCurrentPage(1);
   };
 
   const handlePageChange = (page) => {
     if (page >= 1 && page <= totalPages) {
       setCurrentPage(page);
-      updateURLParams({ search: searchQuery, status: selectedStatus, fromdate, todate, page });
+      updateURLParams({
+        search: searchQuery,
+        status: selectedStatus,
+        fromdate,
+        todate,
+        page,
+      });
     }
   };
 
@@ -174,9 +251,9 @@ const InsAttTable = () => {
           </button>
         </div>
 
-     <div className="relative flex flex-col gap-4 mb-4 lg:flex-row lg:items-center lg:justify-between">
+     <div className="flex flex-col gap-4 mb-4 lg:flex-row lg:items-center lg:justify-between">
         
-           <div className="flex w-full lg:w-1/3">
+           <div className="w-full lg:w-1/3">
             <svg
               className="absolute left-3 top-2.5 text-gray-400 w-5 h-5"
               fill="none"
@@ -196,13 +273,12 @@ const InsAttTable = () => {
               type="text"
               className="w-full py-2 pl-10 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Search..."
-           value={searchQuery}
-              onChange={handleSearchInput}
-              onPaste={handleSearchPaste}
+              value={searchQuery}
+              onChange={handleSearchChange}
             />
 
             {searchQuery && (
-              <div
+              <button
                 onClick={() => {
                   setSearchQuery("");
                   updateURLParams({
@@ -214,7 +290,8 @@ const InsAttTable = () => {
                   });
                   setCurrentPage(1);
                 }}
-                className=" absolute right-3 top-2.5">
+                className="absolute text-gray-500 -translate-y-1/2 right-3 top-1/2 hover:text-blue-500"
+              >
                 <svg
                   className="w-5 h-5"
                   fill="none"
@@ -228,9 +305,9 @@ const InsAttTable = () => {
                     d="M6 18L18 6M6 6l12 12"
                   />
                 </svg>
-              </div>
+              </button>
             )}
-        </div>
+          </div>
 
           <div className="flex flex-col w-full gap-4 md:flex-row md:items-center md:w-auto md:justify-end">
             <div className="relative w-full sm:w-36">
