@@ -12,7 +12,9 @@ import {
 import { ImBooks } from "react-icons/im";
 
 const DashboardAdmin = () => {
-  
+       const {role, user,setUser,setRole,clearAuthState} =  useRole();
+
+
   const [summary, setSummary] = useState({
     totalLearners: 0,
     activeLearners: 0,
@@ -27,7 +29,11 @@ const DashboardAdmin = () => {
 
   useEffect(() => {
     const fetchDashboard = async () => {
+      
       try {
+         if (role !== "admin") {
+        throw new Error("Unauthorized: Only admin can access this dashboard.");
+      }
         const res = await axios.get(`${URL}/api/dashboard/admin`,{
            withCredentials: true,
         });

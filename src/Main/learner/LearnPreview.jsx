@@ -9,6 +9,13 @@ import SingleCourseAssign from "../../Main/courseAssigned/SingleCourseAssign";
 import SingleAttendance from "../attendance/learner/SingleAttendance";
 import { extractDriveFileId } from "../../Components/ImageProxyRouterFunction/funtion.js";
 import { useRole } from "../../Components/AuthContext/AuthContext"; // adjust path as needed
+
+// ✅ Custom toast component
+const Toast = ({ message }) => (
+  <div className="fixed top-5 right-5 z-50 w-[300px] max-w-xs p-4 text-white bg-red-600 rounded-md shadow-md animate-fade-in-down">
+  {message}
+  </div>
+);
 const LearnPreview = () => {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -17,6 +24,8 @@ const LearnPreview = () => {
   const [learner, setLearner] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
+  // const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchLearner = async () => {
@@ -25,15 +34,38 @@ const LearnPreview = () => {
           withCredentials: true,
         });
         setLearner(response.data);
-      }catch (err) {
-         if (!axios.isCancel(err)) {
-            // setError(err.response.data.message);
-        if (err.response &&(err.response.status === 401 ||err.response.data.message === "Credential Invalid or Expired Please Login Again")) {
-            setTimeout(() => {
-              // clearAuthState();
-              // navigate("/");
-            }, 3000);
+      } catch (error) {
+        if (error.name !== "AbortError") {
+          console.error("Error fetching data:", error);
+
+          // ✅ 401 handling
+          if (
+            error.response &&
+            (error.response.status === 401 ||
+              error.response.data?.message ===
+                "Credential Invalid or Expired Please Login Again")
+          ) {
+            setErrorMsg("Credential Invalid or Expired Please Login Again");
+            return setTimeout(() => {
+              clearAuthState();
+              // setErrorMsg("")
+            }, 2000);
           }
+
+          // ✅ Handle custom error messages
+          const errorData = error?.response?.data;
+          const errors = errorData?.errors || errorData?.message || "An error occurred";
+
+          if (Array.isArray(errors)) {
+            setErrorMsg(errors.join(", "));
+          } else {
+            setErrorMsg(errors);
+          }
+
+          // ✅ Auto-clear error toast
+          setTimeout(() => {
+            setErrorMsg("");
+          }, 4000);
         }
       
       } finally {
@@ -94,6 +126,8 @@ const LearnPreview = () => {
   }
 return (
   <div className="px-0 ">
+        {errorMsg && <Toast message={errorMsg} />}
+
     <section className="max-w-screen-2xl mx-auto flex flex-col bg-white p-5 mb-20 space-y-10 rounded-t-lg shadow-sm">
       {/* Header */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">

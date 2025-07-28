@@ -57,180 +57,90 @@ const LearnerAttTable = () => {
     }
   }, []);
 
-  // useEffect(() => {
-  //   const controller = new AbortController();
-  //   const trimmedSearch = searchTerm.trim();
+  useEffect(() => {
+    const controller = new AbortController();
+    const trimmedSearch = searchTerm.trim();
 
-  //   if (!fromDate || !toDate || !moment(fromDate, "YYYY-MM-DD", true).isValid() || !moment(toDate, "YYYY-MM-DD", true).isValid()) {
-  //     return;
-  //   }
+    if (!fromDate || !toDate || !moment(fromDate, "YYYY-MM-DD", true).isValid() || !moment(toDate, "YYYY-MM-DD", true).isValid()) {
+      return;
+    }
 
-  //   const fetchData = async () => {
-  //     setLoading(true);
-  //     setError(null);
+    const fetchData = async () => {
+      setLoading(true);
+      setError(null);
 
-  //     try {
-  //       const params = {
-  //         page: currentPage,
-  //         limit,
-  //       };
+      try {
+        const params = {
+          page: currentPage,
+          limit,
+        };
 
-  //       if (fromDate && moment(fromDate, "YYYY-MM-DD", true).isValid()) {
-  //         params.fromdate = fromDate;
-  //       }
-
-  //       if (toDate && moment(toDate, "YYYY-MM-DD", true).isValid()) {
-  //         params.todate = toDate;
-  //       }
-
-  //       if (classType?.trim()) {
-  //         params.classType = classType.trim();
-  //       }
-
-  //       if (trimmedSearch) {
-  //         params.search = trimmedSearch;
-  //       }
-
-  //       if (date?.trim()) {
-  //         params.date = date.trim();
-  //       }
-
-  //       const res = await axios.get(`${URL}/api/learner-attendance`, {
-  //         params,
-  //         withCredentials: true,
-  //         signal: controller.signal,
-  //       });
-
-  //       setAttendanceData(res.data.data);
-  //       setTotalPages(res.data.totalPages);
-  //     } catch (err) {
-  //       if (!axios.isCancel(err)) {
-  //         console.error("Fetch error:", err);
-  //         setError(err?.response?.data?.message || err.message);
-  //         setTimeout(() => setError(null), 4000);
-
-  //         if (
-  //           err.response &&
-  //           (err.response.status === 401 ||
-  //             err.response.data.message === "Credential Invalid or Expired Please Login Again")
-  //         ) {
-  //           setTimeout(() => clearAuthState(), 2000);
-  //         }
-  //       }
-  //     } finally {
-  //       setLoading(false);
-  //     }
-  //   };
-
-  //   const isPaste =
-  //     trimmedSearch !== lastSearchValue.current &&
-  //     trimmedSearch.length - lastSearchValue.current.length > 1;
-
-  //   lastSearchValue.current = trimmedSearch;
-
-  //   if (debounceRef.current) clearTimeout(debounceRef.current);
-
-  //   if (isPaste || !trimmedSearch) {
-  //     fetchData();
-  //   } else {
-  //     debounceRef.current = setTimeout(fetchData, 1500);
-  //   }
-
-  //   return () => {
-  //     controller.abort();
-  //     if (debounceRef.current) clearTimeout(debounceRef.current);
-  //   };
-  // }, [location.search]);
-useEffect(() => {
-  const controller = new AbortController();
-  const trimmedSearch = searchTerm.trim();
-
-  if (!fromDate || !toDate || !moment(fromDate, "YYYY-MM-DD", true).isValid() || !moment(toDate, "YYYY-MM-DD", true).isValid()) {
-    return;
-  }
-
-  const fetchData = async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const params = {
-        page: currentPage,
-        limit,
-      };
-
-      if (fromDate && moment(fromDate, "YYYY-MM-DD", true).isValid()) {
-        params.fromdate = fromDate;
-      }
-
-      if (toDate && moment(toDate, "YYYY-MM-DD", true).isValid()) {
-        params.todate = toDate;
-      }
-
-      if (classType?.trim()) {
-        params.classType = classType.trim();
-      }
-
-      if (trimmedSearch) {
-        params.search = trimmedSearch;
-      }
-
-      if (date?.trim()) {
-        params.date = date.trim();
-      }
-
-      const res = await axios.get(`${URL}/api/learner-attendance`, {
-        params,
-        withCredentials: true,
-        signal: controller.signal,
-      });
-
-      setAttendanceData(res.data.data);
-      setTotalPages(res.data.totalPages);
-    } catch (err) {
-      if (!axios.isCancel(err)) {
-        console.error("Fetch error:", err);
-        setError(err?.response?.data?.message || err.message);
-        setTimeout(() => setError(null), 4000);
-
-        if (
-          err.response &&
-          (err.response.status === 401 ||
-            err.response.data.message === "Credential Invalid or Expired Please Login Again")
-        ) {
-          setTimeout(() => clearAuthState(), 2000);
+        if (fromDate && moment(fromDate, "YYYY-MM-DD", true).isValid()) {
+          params.fromdate = fromDate;
         }
+
+        if (toDate && moment(toDate, "YYYY-MM-DD", true).isValid()) {
+          params.todate = toDate;
+        }
+
+        if (classType?.trim()) {
+          params.classType = classType.trim();
+        }
+
+        if (trimmedSearch) {
+          params.search = trimmedSearch;
+        }
+
+        if (date?.trim()) {
+          params.date = date.trim();
+        }
+
+        const res = await axios.get(`${URL}/api/learner-attendance`, {
+          params,
+          withCredentials: true,
+          signal: controller.signal,
+        });
+
+        setAttendanceData(res.data.data);
+        setTotalPages(res.data.totalPages);
+      } catch (err) {
+        if (!axios.isCancel(err)) {
+          console.error("Fetch error:", err);
+          setError(err?.response?.data?.message || err.message);
+          setTimeout(() => setError(null), 4000);
+
+          if (
+            err.response &&
+            (err.response.status === 401 ||
+              err.response.data.message === "Credential Invalid or Expired Please Login Again")
+          ) {
+            setTimeout(() => clearAuthState(), 2000);
+          }
+        }
+      } finally {
+        setLoading(false);
       }
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
 
-  const prevSearch = lastSearchValue.current;
-  const isSearchChanged = trimmedSearch !== prevSearch;
-  const isPaste = isSearchChanged && trimmedSearch.length - prevSearch.length > 1;
+    const isPaste =
+      trimmedSearch !== lastSearchValue.current &&
+      trimmedSearch.length - lastSearchValue.current.length > 1;
 
-  lastSearchValue.current = trimmedSearch;
+    lastSearchValue.current = trimmedSearch;
 
-  if (debounceRef.current) clearTimeout(debounceRef.current);
-
-  // Only debounce searchTerm
-  if (isSearchChanged) {
-    if (isPaste || !trimmedSearch) {
-      fetchData(); // Instant for paste or cleared search
-    } else {
-      debounceRef.current = setTimeout(fetchData, 1500); // Debounce for typing
-    }
-  } else {
-    // Any other param change like classType, fromdate, todate – fetch instantly
-    fetchData();
-  }
-
-  return () => {
-    controller.abort();
     if (debounceRef.current) clearTimeout(debounceRef.current);
-  };
-}, [searchTerm, fromDate, toDate, classType, date, currentPage]); // 👈 separated dependencies
+
+    if (isPaste || !trimmedSearch) {
+      fetchData();
+    } else {
+      debounceRef.current = setTimeout(fetchData, 1500);
+    }
+
+    return () => {
+      controller.abort();
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [location.search]);
 
   const handleSearchChange = (e) => {
     const val = e.target.value;

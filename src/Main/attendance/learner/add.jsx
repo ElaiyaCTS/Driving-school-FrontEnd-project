@@ -143,7 +143,8 @@ const MarkLearner = () => {
     } catch (error) {
       const message = error?.response?.data?.message;
       if (error.response?.status === 401 || message === "Credential Invalid or Expired Please Login Again") {
-        return setTimeout(() => clearAuthState(), 2000);
+        setApiError(["Credential Invalid or Expired Please Login Again"])
+        // return setTimeout(() => clearAuthState(), 2000);
       }
       setApiError(Array.isArray(message) ? message.join(", ") : message || "Something went wrong");
       setTimeout(() => setApiError(""), 4000);

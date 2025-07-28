@@ -48,6 +48,7 @@ const InstructorProfile = () => {
 
   return (
     <div className="p-4">
+      
       <section className="flex flex-col bg-white p-5 mb-20 space-y-10 rounded-t-lg">
         <div className="flex items-center justify-between w-full">
           <div className="flex items-center space-x-3">

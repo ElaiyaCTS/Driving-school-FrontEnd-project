@@ -72,7 +72,7 @@ const InstructorDashAttendance = () => {
               error.response.data.message === "Credential Invalid or Expired Please Login Again")
           ) {
             return setTimeout(() => {
-              clearAuthState;
+              // clearAuthState();
               navigate("/");
             }, 2000);
           }

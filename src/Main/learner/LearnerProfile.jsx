@@ -9,8 +9,8 @@ import { useLocation } from "react-router-dom";
 
 // ✅ Custom toast component
 const Toast = ({ message }) => (
-  <div className="fixed z-50 px-6 py-3 text-sm font-medium text-white -translate-x-1/2 bg-red-500 rounded-lg shadow-md top-5 left-1/2">
-    {message}
+  <div className="fixed top-5 right-5 z-50 w-[300px] max-w-xs p-4 text-white bg-red-600 rounded-md shadow-md animate-fade-in-down">  
+  {message}
   </div>
 );
 
@@ -55,7 +55,7 @@ const LearnerProfile = () => {
               error.response.data?.message ===
                 "Credential Invalid or Expired Please Login Again")
           ) {
-            setErrorMsg("Session expired. Redirecting to login...");
+            setErrorMsg("Credential Invalid or Expired Please Login Again");
             return setTimeout(() => {
               clearAuthState();
             }, 2000);

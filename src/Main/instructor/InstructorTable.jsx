@@ -5,7 +5,12 @@ import { useNavigate, useLocation } from "react-router-dom";
 import Pagination from "../../Components/Pagination";
 import { extractDriveFileId } from "../../Components/ImageProxyRouterFunction/funtion.js";
 import { useRole } from "../../Components/AuthContext/AuthContext"; // adjust path as needed
-
+// ✅ Custom toast component
+const Toast = ({ message }) => (
+  <div className="fixed top-5 right-5 z-50 w-[300px] max-w-xs p-4 text-white bg-red-600 rounded-md shadow-md animate-fade-in-down">
+  {message}
+  </div>
+);
 const InstructorTable = () => {
  const isPastedRef = useRef(false);
 
@@ -13,10 +18,10 @@ const InstructorTable = () => {
 
    const navigate = useNavigate();
   const location = useLocation();
-
+const [errorMsg, setErrorMsg] = useState("");
+  const [error, setError] = useState(null);
   const [instructors, setInstructors] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [limit] = useState(10);
   const [TotalPages, setTotalPages] = useState(1);
 
@@ -105,23 +110,40 @@ const InstructorTable = () => {
         setInstructors(response.data.instructorsWithDecrypted);
         setTotalPages(response.data.totalPages || 1);
       } catch (error) {
-        if (axios.isCancel(error)) {
-          console.log("Request canceled");
-        } else {
-          console.error("Error fetching instructors:", error);
-          setError(error.message);
+        if (error.name !== "AbortError") {
+          console.error("Error fetching data:", error);
+
+          // ✅ 401 handling
           if (
             error.response &&
             (error.response.status === 401 ||
-              error.response.data.message ===
+              error.response.data?.message ===
                 "Credential Invalid or Expired Please Login Again")
           ) {
-            setTimeout(() => {
+            setErrorMsg("Credential Invalid or Expired Please Login Again");
+            return setTimeout(() => {
               clearAuthState();
+              setErrorMsg("")
             }, 2000);
           }
+
+          // ✅ Handle custom error messages
+          const errorData = error?.response?.data;
+          const errors = errorData?.errors || errorData?.message ;
+
+
+          if (Array.isArray(errors)) {
+            setErrorMsg(errors.join(", "));
+          } else {
+            setErrorMsg(errors);
+          }
+
+          // ✅ Auto-clear error toast
+          setTimeout(() => {
+            setErrorMsg("");
+          }, 4000);
         }
-      } finally {
+      }finally {
         setLoading(false);
       }
     };
@@ -166,6 +188,8 @@ const InstructorTable = () => {
 
   return (
     <div className="p-4">
+        {errorMsg && <Toast message={errorMsg} />}
+
       <div className="flex flex-col gap-4 mb-4 md:flex-row md:items-center md:justify-between">
         <h3 className="text-xl font-bold text-center md:text-left">
           Instructor Details

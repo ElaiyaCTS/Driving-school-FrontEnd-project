@@ -201,6 +201,7 @@ const MarkLearner = () => {
     status === 401 ||
     message === "Credential Invalid or Expired Please Login Again"
   ) {
+    setErrorMessages(["Credential Invalid or Expired Please Login Again"]);
     return setTimeout(() => {
       clearAuthState();
       navigate("/");

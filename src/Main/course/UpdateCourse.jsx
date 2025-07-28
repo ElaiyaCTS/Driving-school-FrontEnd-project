@@ -70,7 +70,9 @@ const UpdateCourse = () => {
             error.response.data.message ===
               "Credential Invalid or Expired Please Login Again")
         ) {
+        setErrorMessages(["Credential Invalid or Expired Please Login Again"]);
           return setTimeout(() => {
+        setErrorMessages([]);
             clearAuthState();
           }, 2000);
         }
@@ -102,8 +104,10 @@ const UpdateCourse = () => {
           error.response.data.message ===
             "Credential Invalid or Expired Please Login Again")
       ) {
+         setErrorMessages(["Credential Invalid or Expired Please Login Again"]);
         return setTimeout(() => {
-          clearAuthState();
+        setErrorMessages([]);
+          // clearAuthState();
         }, 2000);
       }
 

@@ -8,12 +8,20 @@ import { URL } from "../../App";
 import { extractDriveFileId } from "../../Components/ImageProxyRouterFunction/funtion.js";
 import { useRole } from "../../Components/AuthContext/AuthContext";
 
+
+// ✅ Custom toast component
+const Toast = ({ message }) => (
+  <div className="fixed top-5 right-5 z-50 w-[300px] max-w-xs p-4 text-white bg-red-600 rounded-md shadow-md animate-fade-in-down">
+  {message}
+  </div>
+);
 const LearnerTable = () => {
  const isPastedRef = useRef(false);
 
   const navigate = useNavigate();
   const location = useLocation();
       const {role, user,setUser,setRole,clearAuthState} =  useRole();
+  const [errorMsg, setErrorMsg] = useState("");
 
   const [search, setSearch] = useState("");
   const [selectedGender, setSelectedGender] = useState("");
@@ -93,74 +101,7 @@ const LearnerTable = () => {
     setCurrentPage(parseInt(params.get("page")) || 1);
   }, [location.search]);
 
-  // useEffect(() => {
-  //   const controller = new AbortController();
-  //   const fetchData = async () => {
-  //     setLoading(true);
-  //     setError(null);
 
-  //     try {
-  //       const params = {
-  //         limit,
-  //         page: currentPage,
-  //       };
-
-  //       if (search.trim()) params.search = search.trim();
-  //       if (selectedGender) params.gender = selectedGender;
-
-  //       const isFromValid = moment(fromDate, "YYYY-MM-DD", true).isValid();
-  //       const isToValid = moment(toDate, "YYYY-MM-DD", true).isValid();
-
-  //       if (isFromValid && isToValid) {
-  //         params.fromdate = fromDate;
-  //         params.todate = toDate;
-  //       }
-
-  //       const response = await axios.get(`${URL}/api/user/learners`, {
-  //         params,
-  //         withCredentials: true,
-  //         signal: controller.signal,
-  //       });
-
-  //       setLearners(response.data.learners || []);
-  //       setTotalPages(response.data.totalPages || 1);
-  //     } catch (err) {
-  //        if (!axios.isCancel(err)) {
-  //           setError(err.response.data.message);
-  //       if (err.response &&(err.response.status === 401 ||err.response.data.message === "Credential Invalid or Expired Please Login Again")) {
-  //           setTimeout(() => {
-  //             clearAuthState();
-  //             // navigate("/");
-  //           }, 3000);
-  //         }
-  //       }
-  //     }
-  //     finally {
-  //       setLoading(false);
-  //     }
-  //   };
-
-  //   const isFromValid = moment(fromDate, "YYYY-MM-DD", true).isValid();
-  //   const isToValid = moment(toDate, "YYYY-MM-DD", true).isValid();
-  //   const bothDatesSelected = isFromValid && isToValid;
-  //   const bothDatesCleared = !fromDate && !toDate;
-
-  //   const shouldCallAPI =
-  //     search.trim() !== "" ||
-  //     selectedGender !== "" ||
-  //     bothDatesSelected ||
-  //     bothDatesCleared;
-
-  //   if (!shouldCallAPI) return;
-
-  //   if (debounceTimer.current) clearTimeout(debounceTimer.current);
-  //   debounceTimer.current = setTimeout(fetchData, search ? 2000 : 0);
-
-  //   return () => {
-  //     clearTimeout(debounceTimer.current);
-  //     controller.abort();
-  //   };
-  // }, [search, selectedGender, fromDate, toDate, currentPage]);
 
     const controllerRef = useRef(null);
 
@@ -200,18 +141,38 @@ const LearnerTable = () => {
 
         setLearners(response.data.learners || []);
         setTotalPages(response.data.totalPages || 1);
-      } catch (err) {
-        if (!axios.isCancel(err)) {
-          setError(err?.response?.data?.message);
+      }  catch (error) {
+        if (error.name !== "AbortError") {
+          console.error("Error fetching data:", error);
+
+          // ✅ 401 handling
           if (
-            err.response &&
-            (err.response.status === 401 ||
-              err.response.data.message === "Credential Invalid or Expired Please Login Again")
+            error.response &&
+            (error.response.status === 401 ||
+              error.response.data?.message ===
+                "Credential Invalid or Expired Please Login Again")
           ) {
-            setTimeout(() => {
+            setErrorMsg("Credential Invalid or Expired Please Login Again");
+            return setTimeout(() => {
               clearAuthState();
-            }, 3000);
+              setErrorMsg("")
+            }, 2000);
           }
+
+          // ✅ Handle custom error messages
+          const errorData = error?.response?.data;
+          const errors = errorData?.errors || errorData?.message || "An error occurred";
+
+          if (Array.isArray(errors)) {
+            setErrorMsg(errors.join(", "));
+          } else {
+            setErrorMsg(errors);
+          }
+
+          // ✅ Auto-clear error toast
+          setTimeout(() => {
+            setErrorMsg("");
+          }, 4000);
         }
       } finally {
         setLoading(false);
@@ -311,6 +272,7 @@ const LearnerTable = () => {
 
   return (
     <div className="p-4">
+        {errorMsg && <Toast message={errorMsg} />}
       <div className="flex flex-col gap-4 mb-4 md:flex-row md:items-center md:justify-between">
         <h3 className="text-xl font-bold text-center md:text-left">Learner Details</h3>
         <button

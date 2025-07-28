@@ -9,7 +9,7 @@ import { useRole } from "../../Components/AuthContext/AuthContext";
 
 const SinglePayment = () => {
   const navigate = useNavigate();
-        const {role, user,setUser,setRole,clearAuthState} =  useRole();
+  const {role, user,setUser,setRole,clearAuthState} =  useRole();
 
   const { id } = useParams();
   const [payments, setPayments] = useState([]);
@@ -28,7 +28,7 @@ const SinglePayment = () => {
     const fetchPayments = async () => {
       setLoading(true);
       try {
-        const token = localStorage.getItem("token");
+        // const token = localStorage.getItem("token");
 
         if (fromDate && toDate && new Date(fromDate) > new Date(toDate)) {
           console.error(

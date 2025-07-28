@@ -107,6 +107,7 @@ const AssignCourse = () => {
           error.response.data.message ===
             "Credential Invalid or Expired Please Login Again")
       ) {
+          setErrorMessages(["Credential Invalid or Expired Please Login Again"]);
         return setTimeout(() => clearAuthState(), 2000);
       }
 
