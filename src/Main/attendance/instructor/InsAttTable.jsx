@@ -200,7 +200,7 @@ const InsAttTable = () => {
               onChange={handleSearchInput}
               onPaste={handleSearchPaste}
             />
-
+{/* 
             {searchQuery && (
               <div
                 onClick={() => {
@@ -229,7 +229,7 @@ const InsAttTable = () => {
                   />
                 </svg>
               </div>
-            )}
+            )} */}
         </div>
 
           <div className="flex flex-col w-full gap-4 md:flex-row md:items-center md:w-auto md:justify-end">
