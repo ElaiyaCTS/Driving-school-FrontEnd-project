@@ -169,23 +169,23 @@ const AssignCourseTable = () => {
 
   return (
     <div className="p-4">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+      <div className="flex flex-col gap-4 mb-4 md:flex-row md:items-center md:justify-between">
         <h3 className="text-xl font-bold text-center md:text-left">
           Course Assigned List
         </h3>
         <button
           onClick={() => navigate("/admin/course-assigned/new")}
-          className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition w-full md:w-auto"
+          className="w-full px-4 py-2 text-white transition bg-blue-500 rounded-md hover:bg-blue-600 md:w-auto"
         >
           Add
         </button>
       </div>
 
-      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-4 w-full">
+      <div className="flex flex-col w-full gap-4 mb-4 md:flex-row md:justify-between md:items-center">
         <div className="relative w-full md:w-1/3">
           <input
             type="text"
-            className="w-full border border-gray-300 text-gray-900 text-sm rounded-lg pl-10 pr-10 py-2"
+            className="w-full py-2 pl-10 pr-10 text-sm text-gray-900 border border-gray-300 rounded-lg"
             placeholder="Search"
             value={search}
             onChange={handleSearchChange}
@@ -193,7 +193,7 @@ const AssignCourseTable = () => {
             
           />
           <svg
-            className="w-4 h-4 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2"
+            className="absolute w-4 h-4 text-gray-500 -translate-y-1/2 left-3 top-1/2"
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
             viewBox="0 0 20 20"
@@ -209,7 +209,7 @@ const AssignCourseTable = () => {
           {search && (
             <button
               type="button"
-              className="absolute inset-y-0 right-3 flex items-center text-gray-500"
+              className="absolute inset-y-0 flex items-center text-gray-500 right-3"
               onClick={() => {
                 setSearch("");
                 updateURLParams({ search: "", statusOne, statusTwo, page: 1 });
@@ -233,10 +233,10 @@ const AssignCourseTable = () => {
           )}
         </div>
 
-        <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto md:justify-end">
+        <div className="flex flex-col w-full gap-3 md:flex-row md:w-auto md:justify-end">
           <div className="relative w-full md:w-48">
             <select
-              className="peer block w-full text-sm text-gray-900 bg-transparent rounded-lg border border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 px-3 py-2"
+              className="block w-full px-3 py-2 text-sm text-gray-900 bg-transparent border border-gray-300 rounded-lg appearance-none peer focus:outline-none focus:ring-0 focus:border-blue-600"
               value={statusOne}
               onChange={handleStatusOneChange}
             >
@@ -252,7 +252,7 @@ const AssignCourseTable = () => {
 
           <div className="relative w-full md:w-48">
             <select
-              className="peer block w-full text-sm text-gray-900 bg-transparent rounded-lg border border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 px-3 py-2"
+              className="block w-full px-3 py-2 text-sm text-gray-900 bg-transparent border border-gray-300 rounded-lg appearance-none peer focus:outline-none focus:ring-0 focus:border-blue-600"
               value={statusTwo}
               onChange={handleStatusTwoChange}
             >
@@ -268,14 +268,14 @@ const AssignCourseTable = () => {
       </div>
 
       {loading ? (
-        <div className="text-center py-5 text-blue-600 font-semibold text-lg">
+        <div className="py-5 text-lg font-semibold text-center text-blue-600">
           Loading...
         </div>
       ) : (
         <>
           <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
             <table className="w-full text-sm text-gray-500">
-              <thead className="text-sm text-gray-700 text-left bg-gray-50 sticky top-0 z-10">
+              <thead className="sticky top-0 z-10 text-sm text-left text-gray-700 bg-gray-50">
                 <tr>
                   <th className="px-6 py-4">S.No</th>
                   <th className="px-6 py-4">Profile</th>
@@ -300,7 +300,7 @@ const AssignCourseTable = () => {
                             assignment.learner.photo
                           )}`}
                           alt="Learner"
-                          className="w-16 h-16 object-cover rounded-full border-4 border-white shadow-md"
+                          className="object-cover w-16 h-16 border-4 border-white rounded-full shadow-md"
                         />
                       </td>
                       <td className="px-6 py-4 truncate" title={assignment.learner.fullName}>
@@ -338,14 +338,14 @@ const AssignCourseTable = () => {
                           }`}
                           disabled={assignment.statusOne === "Completed"}
                         >
-                          <i className="fa-solid fa-pen-to-square text-blue-600"></i>
+                          <i className="text-blue-600 fa-solid fa-pen-to-square"></i>
                         </button>
                       </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="10" className="text-center text-red-600 py-4">
+                    <td colSpan="10" className="py-4 text-center text-red-600">
                       Course assigned not found
                     </td>
                   </tr>

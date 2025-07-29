@@ -4,11 +4,16 @@ import axios from "axios";
 import { URL } from "../../App";
 import Pagination from "../../Components/Pagination";
 import { useRole } from "../../Components/AuthContext/AuthContext";
-
+// ✅ Custom toast component
+const Toast = ({ message }) => (
+  <div className="fixed top-5 right-5 z-50 w-[300px] max-w-xs p-4 text-white bg-red-600 rounded-md shadow-md animate-fade-in-down">
+  {message}
+  </div>
+);
 const LearnerSingleAssign = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useRole();
+  const { user,clearAuthState } = useRole();
   const controllerRef = useRef(null);
 
   const [assignments, setAssignments] = useState([]);
@@ -18,6 +23,7 @@ const LearnerSingleAssign = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
 
   const limit = 5;
 
@@ -74,10 +80,39 @@ const LearnerSingleAssign = () => {
       setAssignments(response.data.assignments || []);
       setTotalPages(response.data.totalPages || 1);
     } catch (error) {
-      if (error.name !== "CanceledError") {
-        console.error("API Error:", error);
-      }
-    } finally {
+        if (error.name !== "AbortError") {
+          console.error("Error fetching data:", error);
+
+          // ✅ 401 handling
+          if (
+            error.response &&
+            (error.response.status === 401 ||
+              error.response.data?.message ===
+                "Credential Invalid or Expired Please Login Again")
+          ) {
+            setErrorMsg("Credential Invalid or Expired Please Login Again");
+            return setTimeout(() => {
+              clearAuthState();
+              setErrorMsg("")
+            }, 2000);
+          }
+
+          // ✅ Handle custom error messages
+          const errorData = error?.response?.data;
+          const errors = errorData?.errors || errorData?.message || "An error occurred";
+
+          if (Array.isArray(errors)) {
+            setErrorMsg(errors.join(", "));
+          } else {
+            setErrorMsg(errors);
+          }
+
+          // ✅ Auto-clear error toast
+          setTimeout(() => {
+            setErrorMsg("");
+          }, 4000);
+        }
+      } finally {
       setLoading(false);
     }
   };
@@ -136,12 +171,14 @@ const LearnerSingleAssign = () => {
 
   return (
     <div className="p-4">
+              {errorMsg && <Toast message={errorMsg} />}
+
       <div className="flex flex-row items-center justify-between gap-4 mb-4">
         <h3 className="text-xl font-bold">Course  History</h3>
       </div>
 
       <div className="flex flex-col justify-between gap-4 mb-4 md:flex-row">
-        <div className="relative w-full md:w-1/3">
+        <div className="relative w-full md:w-64">
           <input
             type="text"
             value={search}

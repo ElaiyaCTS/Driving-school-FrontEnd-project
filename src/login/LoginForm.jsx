@@ -70,7 +70,7 @@ setTimeout(() => {
 // ✅ Navigate after 1 second delay (optional: wait slightly so toast is seen)
 setTimeout(() => {
   if (Role === "learner") {
-    navigate("/learner/learnerDash");
+    navigate("/learner/LearnerDash");
   } else if (Role === "admin") {
     navigate("/admin/dashboard");
   } else if (Role === "instructor") {
@@ -220,7 +220,7 @@ setTimeout(() => {
         {/* ✅ Error Toast */}
         {customError && (
           <div className="fixed top-5 right-5 z-50 w-[300px] max-w-xs p-4 text-white bg-red-600 rounded-md shadow-md animate-fade-in-down">
-            <ul className="list-none list-inside text-sm">
+            <ul className="text-sm list-none list-inside">
               {customError.map((msg, index) => (
                 <li key={index}>{msg}</li>
               ))}

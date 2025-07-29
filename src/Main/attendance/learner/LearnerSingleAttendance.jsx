@@ -6,6 +6,13 @@ import { URL } from "../../../App";
 import Pagination from "../../../Components/Pagination";
 import { useRole } from "../../../Components/AuthContext/AuthContext";
 
+
+// ✅ Custom toast component
+const Toast = ({ message }) => (
+  <div className="fixed top-5 right-5 z-50 w-[300px] max-w-xs p-4 text-white bg-red-600 rounded-md shadow-md animate-fade-in-down">
+  {message}
+  </div>
+);
 const LearnerSingleAttendance = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -16,6 +23,7 @@ const LearnerSingleAttendance = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [errorMsg, setErrorMsg] = useState("");
 
   const [toDate, setToDate] = useState("");
   const [fromDate, setFromDate] = useState("");
@@ -102,22 +110,41 @@ const LearnerSingleAttendance = () => {
 
         setAttendanceData(response.data.data || []);
         setTotalPages(response.data.totalPages || 1);
-      } catch (error) {
-        console.error(error);
+      }
+       catch (error) {
+        if (error.name !== "AbortError") {
+          console.error("Error fetching data:", error);
 
-        if (
-          error?.response?.status === 401 ||
-          error?.response?.data?.message === "Credential Invalid or Expired Please Login Again"
-        ) {
-          clearAuthState?.();
+          // ✅ 401 handling
+          if (
+            error.response &&
+            (error.response.status === 401 ||
+              error.response.data?.message ===
+                "Credential Invalid or Expired Please Login Again")
+          ) {
+            setErrorMsg("Credential Invalid or Expired Please Login Again");
+            return setTimeout(() => {
+              clearAuthState();
+              setErrorMsg("")
+            }, 2000);
+          }
+
+          // ✅ Handle custom error messages
+          const errorData = error?.response?.data;
+          const errors = errorData?.errors || errorData?.message || "An error occurred";
+
+          if (Array.isArray(errors)) {
+            setErrorMsg(errors.join(", "));
+          } else {
+            setErrorMsg(errors);
+          }
+
+          // ✅ Auto-clear error toast
+          setTimeout(() => {
+            setErrorMsg("");
+          }, 4000);
         }
-
-        setError("Failed to fetch data");
-
-        setTimeout(() => {
-          setError(null);
-        }, 4000);
-      } finally {
+      }  finally {
         setLoading(false);
       }
     };
@@ -263,6 +290,8 @@ const LearnerSingleAttendance = () => {
 
   return (
     <div className="p-4">
+              {errorMsg && <Toast message={errorMsg} />}
+
       <div className="flex flex-row items-center justify-between gap-4 mb-4">
         <h3 className="text-xl font-bold text-center md:text-left">
           Attendance  History
@@ -270,7 +299,7 @@ const LearnerSingleAttendance = () => {
       </div>
 
       <div className="flex flex-col gap-4 mb-4 md:flex-row md:items-center md:justify-between">
-        <div className="relative w-full md:max-w-md">
+        <div className="relative w-full md:w-64">
           <svg
             className="absolute left-3 top-2.5 text-gray-400 w-5 h-5"
             fill="none"
@@ -283,7 +312,7 @@ const LearnerSingleAttendance = () => {
           </svg>
           <input
             type="search"
-            className="w-full py-2 pl-10 text-sm text-gray-900 border border-gray-300 rounded-lg"
+            className="w-full py-2 pl-10 text-sm text-gray-900 border border-gray-300 rounded-lg "
             placeholder="Search"
             value={search}
             onChange={handleSearchChange}

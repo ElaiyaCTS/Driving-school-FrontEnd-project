@@ -106,7 +106,7 @@ const SinglePayment = () => {
 
   return (
     <div className="p-4">
-      <div className="flex flex-row justify-between items-center gap-4 mb-4">
+      <div className="flex flex-row items-center justify-between gap-4 mb-4">
         <h3 className="text-base font-semibold">Payment  History</h3>
         <FaSyncAlt
           className="text-blue-500 cursor-pointer hover:text-blue-600"
@@ -116,9 +116,9 @@ const SinglePayment = () => {
         />
       </div>
 
-      <div className="flex flex-col md:flex-row md:items-center justify-between space-y-2 md:space-y-0 mb-4">
+      <div className="flex flex-col justify-between mb-4 space-y-2 md:flex-row md:items-center md:space-y-0">
         <div className="relative w-full md:w-1/3">
-          <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+          <div className="absolute inset-y-0 flex items-center pointer-events-none left-3">
             <svg
               className="w-4 h-4 text-gray-500"
               xmlns="http://www.w3.org/2000/svg"
@@ -137,7 +137,7 @@ const SinglePayment = () => {
 
           <input
             type="text"
-            className="w-full border border-gray-300 text-gray-900 text-sm rounded-lg pl-10 pr-10 py-2"
+            className="w-full py-2 pl-10 pr-10 text-sm text-gray-900 border border-gray-300 rounded-lg"
             placeholder="Search"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -145,7 +145,7 @@ const SinglePayment = () => {
 
           {searchTerm && (
             <button
-              className="absolute inset-y-0 right-3 flex items-center"
+              className="absolute inset-y-0 flex items-center right-3"
               onClick={() => setSearchTerm("")}
               aria-label="Clear Search"
             >
@@ -167,11 +167,11 @@ const SinglePayment = () => {
           )}
         </div>
 
-        <div className="flex flex-col md:flex-row md:items-center gap-4 w-full md:w-auto justify-end">
+        <div className="flex flex-col justify-end w-full gap-4 md:flex-row md:items-center md:w-auto">
           <div className="relative w-full sm:w-36">
             <select
               id="floating_payment"
-              className="peer block w-full text-sm text-gray-900 bg-transparent rounded-lg border border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 px-3 py-2"
+              className="block w-full px-3 py-2 text-sm text-gray-900 bg-transparent border border-gray-300 rounded-lg appearance-none peer focus:outline-none focus:ring-0 focus:border-blue-600"
               value={paymentMethod}
               onChange={(e) => setPaymentMethod(e.target.value)}
             >
@@ -194,7 +194,7 @@ const SinglePayment = () => {
               value={fromDate}
               onChange={(e) => setFromDate(e.target.value)}
               onFocus={(event) => (event.nativeEvent.target.defaultValue = "")}
-              className="peer border border-gray-300 text-gray-900 text-sm rounded-lg px-3 py-2"
+              className="px-3 py-2 text-sm text-gray-900 border border-gray-300 rounded-lg peer"
             />
             <label className="absolute left-3 top-[-8px] text-xs bg-white px-1 text-gray-500">
               From
@@ -206,7 +206,7 @@ const SinglePayment = () => {
               value={toDate}
               onChange={(e) => setToDate(e.target.value)}
               onFocus={(event) => (event.nativeEvent.target.defaultValue = "")}
-              className="peer border border-gray-300 text-gray-900 text-sm rounded-lg px-3 py-2"
+              className="px-3 py-2 text-sm text-gray-900 border border-gray-300 rounded-lg peer"
             />
             <label className="absolute left-3 top-[-8px] text-xs bg-white px-1 text-gray-500">
               To
@@ -215,13 +215,13 @@ const SinglePayment = () => {
         </div>
       </div>
       {loading ? (
-        <div className="text-center py-5 text-blue-600 font-semibold text-lg">
+        <div className="py-5 text-lg font-semibold text-center text-blue-600">
           Loading...
         </div>
       ) : (
         <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
           <table className="w-full text-sm text-gray-500">
-            <thead className="text-sm text-gray-700 text-left bg-gray-50">
+            <thead className="text-sm text-left text-gray-700 bg-gray-50">
               <tr className="">
                 <th className="px-6 py-4">S.No</th>
                 <th className="px-6 py-4">Payment Method</th>
@@ -234,7 +234,7 @@ const SinglePayment = () => {
                 <tr>
                   <td
                     colSpan="4"
-                    className="text-center text-red-600 py-6 bg-white"
+                    className="py-6 text-center text-red-600 bg-white"
                   >
                     Payments not found
                   </td>

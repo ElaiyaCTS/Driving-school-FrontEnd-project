@@ -6,13 +6,18 @@ import Pagination from "../../../Components/Pagination";
 import { extractDriveFileId } from "../../../Components/ImageProxyRouterFunction/funtion.js";
 import { useRole } from "../../../Components/AuthContext/AuthContext";
 import { URL } from "../../../App";
-
+// ✅ Custom toast component
+const Toast = ({ message }) => (
+  <div className="fixed top-5 right-5 z-50 w-[300px] max-w-xs p-4 text-white bg-red-600 rounded-md shadow-md animate-fade-in-down">
+  {message}
+  </div>
+);
 const InsLearnerAttTable = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, clearAuthState } = useRole();
   const instructorId = user?.user_id;
-
+  const [errorMsg, setErrorMsg] = useState("");
   const [attendanceData, setAttendanceData] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -70,18 +75,40 @@ const InsLearnerAttTable = () => {
 
       setAttendanceData(res.data.data || []);
       setTotalPages(res.data.totalPages || 1);
-    } catch (err) {
-      if (!axios.isCancel(err)) {
-        setError(err.response?.data?.message || "Something went wrong.");
-        if (
-          err.response &&
-          (err.response.status === 401 ||
-            err.response.data.message === "Credential Invalid or Expired Please Login Again")
-        ) {
-          setTimeout(() => clearAuthState(), 3000);
+    } catch (error) {
+        if (error.name !== "AbortError") {
+          console.error("Error fetching data:", error);
+
+          // ✅ 401 handling
+          if (
+            error.response &&
+            (error.response.status === 401 ||
+              error.response.data?.message ===
+                "Credential Invalid or Expired Please Login Again")
+          ) {
+            setErrorMsg("Credential Invalid or Expired Please Login Again");
+            return setTimeout(() => {
+              clearAuthState();
+              setErrorMsg("")
+            }, 2000);
+          }
+
+          // ✅ Handle custom error messages
+          const errorData = error?.response?.data;
+          const errors = errorData?.errors || errorData?.message ;
+
+          if (Array.isArray(errors)) {
+            setErrorMsg(errors.join(", "));
+          } else {
+            setErrorMsg(errors);
+          }
+
+          // ✅ Auto-clear error toast
+          setTimeout(() => {
+            setErrorMsg("");
+          }, 4000);
         }
-      }
-    } finally {
+      }  finally {
       setLoading(false);
     }
   };
@@ -176,6 +203,8 @@ const InsLearnerAttTable = () => {
 
   return (
     <div className="p-4">
+              {errorMsg && <Toast message={errorMsg} />}
+
       <div className="flex flex-col gap-4 mb-4 md:flex-row md:items-center md:justify-between">
         <h3 className="text-xl font-bold text-center md:text-left">Learner  Attendance Details</h3>
         <button

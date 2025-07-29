@@ -5,7 +5,12 @@ import moment from "moment";
 import Pagination from "../../Components/Pagination";
 import { URL } from "../../App";
 import { useRole } from "../../Components/AuthContext/AuthContext";
-
+// ✅ Custom toast component
+const Toast = ({ message }) => (
+  <div className="fixed top-5 right-5 z-50 w-[300px] max-w-xs p-4 text-white bg-red-600 rounded-md shadow-md animate-fade-in-down">
+  {message}
+  </div>
+);
 const LearnerSinglePayment = () => {
   const { user, isLoading: authLoading, clearAuthState } = useRole();
   const paymentId = user?.user_id;
@@ -78,8 +83,9 @@ const LearnerSinglePayment = () => {
       if (err.name !== "CanceledError") {
         console.error(err);
         if (err.response?.status === 401) {
+          setErrorMsg(['Credential Invalid or Expired Please Login Again' ]);
           clearAuthState();
-          navigate("/");
+          // navigate("/");
         } else {
           const msg =
             err.response?.data?.message ||
@@ -182,27 +188,23 @@ const LearnerSinglePayment = () => {
   <div className="p-4">
     <h3 className="mb-4 text-xl font-bold">Payment History</h3>
 
-    {errorMsg && (
-      <div className="p-2 mb-4 text-sm text-white bg-red-500 rounded">
-        {errorMsg}
-      </div>
-    )}
+
+        {errorMsg && <Toast message={errorMsg} />}
+
 
     {/* Search and Filters */}
-    <div className="flex flex-col gap-4 mb-4 md:flex-row md:items-end md:justify-between">
-      
-      {/* Search Box */}
-      <div className="relative w-full md:max-w-md">
-        <svg
-          className="absolute left-3 top-3 text-gray-400 w-5 h-5"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          viewBox="0 0 24 24"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35" />
-          <circle cx="10" cy="10" r="7" />
-        </svg>
+   <div className="flex flex-col gap-4 mb-4 md:flex-row md:items-center md:justify-between">
+        <div className="relative w-full md:w-64">
+          <svg
+            className="absolute left-3 top-2.5 text-gray-400 w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35" />
+            <circle cx="10" cy="10" r="7" />
+          </svg>
         <input
           type="text"
           placeholder="Search..."
@@ -213,7 +215,7 @@ const LearnerSinglePayment = () => {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col gap-4 md:flex-row w-full md:w-auto">
+      <div className="flex flex-col w-full gap-4 md:flex-row md:w-auto">
         {/* Payment Method */}
         <div className="relative w-full md:w-40">
           <select

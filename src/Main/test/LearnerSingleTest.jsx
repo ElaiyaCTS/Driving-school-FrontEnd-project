@@ -5,11 +5,17 @@ import moment from "moment";
 import { URL } from "../../App";
 import Pagination from "../../Components/Pagination";
 import { useRole } from "../../Components/AuthContext/AuthContext";
-
+// ✅ Custom toast component
+const Toast = ({ message }) => (
+  <div className="fixed top-5 right-5 z-50 w-[300px] max-w-xs p-4 text-white bg-red-600 rounded-md shadow-md animate-fade-in-down">
+  {message}
+  </div>
+);
 const LearnerSingleTest = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { role, user, setUser, setRole, clearAuthState } = useRole();
+  const [errorMsg, setErrorMsg] = useState("");
 
   const [tests, setTests] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -79,28 +85,39 @@ const LearnerSingleTest = () => {
       setTests(response.data.tests || []);
       setTotalPages(response.data.totalPages || 1);
     } catch (error) {
-        if (axios.isCancel(error)) {
-    // ✅ Ignore abort/cancelled request silently
-    return;
-  }
-      if (
-        error.response &&
-        (error.response.status === 401 ||
-          error.response.data.message ===
-            "Credential Invalid or Expired Please Login Again")
-      ) {
-        setTimeout(() => {
-          clearAuthState();
-        }, 2000);
-      } else {
-        const errMsg =
-          error?.response?.data?.message || error.message || "Something went wrong";
-        setError(errMsg);
-        setTimeout(() => {
-          setError(null);
-        }, 4000);
-      }
-    } finally {
+        if (error.name !== "AbortError") {
+          console.error("Error fetching data:", error);
+
+          // ✅ 401 handling
+          if (
+            error.response &&
+            (error.response.status === 401 ||
+              error.response.data?.message ===
+                "Credential Invalid or Expired Please Login Again")
+          ) {
+            setErrorMsg("Credential Invalid or Expired Please Login Again");
+            return setTimeout(() => {
+              clearAuthState();
+              setErrorMsg("")
+            }, 2000);
+          }
+
+          // ✅ Handle custom error messages
+          const errorData = error?.response?.data;
+          const errors = errorData?.errors || errorData?.message || "An error occurred";
+
+          if (Array.isArray(errors)) {
+            setErrorMsg(errors.join(", "));
+          } else {
+            setErrorMsg(errors);
+          }
+
+          // ✅ Auto-clear error toast
+          setTimeout(() => {
+            setErrorMsg("");
+          }, 4000);
+        }
+      }  finally {
       setLoading(false);
     }
   };
@@ -275,15 +292,14 @@ const LearnerSingleTest = () => {
 
   return (
     <div className="p-6">
+              {errorMsg && <Toast message={errorMsg} />}
+
       <div className="flex flex-row items-center justify-between gap-4 mb-4">
         <h3 className="text-xl font-bold text-center md:text-left">Test History</h3>
       </div>
 
-      {error && (
-        <div className="mb-4 text-sm font-semibold text-center text-red-600">
-          {error}
-        </div>
-      )}
+      
+             
 
       <div className="flex flex-col justify-between gap-4 mb-4 md:flex-row md:items-center">
         <div className="relative w-full md:w-64">
